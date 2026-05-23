@@ -16,6 +16,22 @@
 
 方式 B は LR2 利用者向けの別フォーマット変換が必要になる。方式 C はディスク使用量・同期コストが大きい。
 
+### 1.1 確定仕様（出力形式・条件式）
+
+以下は実装・運用の前提として確定する。
+
+| 項目 | 内容 |
+|------|------|
+| 出力先・形式 | beatoraja インストール直下の **`folder/default.json`** にマージする **JSON 配列の要素**（`CommandFolder` と同一形状）。 |
+| 条件 SQL（`sql` フィールド） | **`minbpm != maxbpm`**（`song` テーブルの列。ヘッダから解釈された最小 BPM と最大 BPM が異なる譜面を集める）。 |
+
+**挙動の補足:**
+
+- SQLite では `NULL != 値` は真にならないため、`minbpm` または `maxbpm` が NULL の行は **結果に含まれない**。
+- 本体が **譜面情報 DB（`songinfo.db`）を有効**にしている場合、`getSongDatas` は `song` と `information` の **INNER JOIN** になる。`information` に行が無い譜面は **`minbpm != maxbpm` を満たしていても一覧から落ちる**（本体既存の DENSITY フォルダ等と同じ前提）。
+
+コピー用の断片ファイル: [examples/beatoraja-default-json-snippet-changing-bpm.json](../examples/beatoraja-default-json-snippet-changing-bpm.json)
+
 ---
 
 ## 2. データソースと参照可能な項目
@@ -38,7 +54,7 @@
 | `mainbpm` | `information`（`songinfo.db`） | REAL | 解析結果としての代表 BPM。`#RANDOM` や複雑な定義では `song` 側と差が出うる（既存メモ参照）。 |
 | `speedchange` 等 | `information` | TEXT | 速度変化のシリアライズデータ。高度フィルタ用。解析済み DB が必須。 |
 
-**要件上の決定が必要:** 「BPM≥180」の定義を **`maxbpm`** にするか **`mainbpm`** にするか、または **`minbpm` と `maxbpm` の区間が閾値と交差するか**（例: 160–200 の曲を「180以上に含めるか」）をポリシーとして固定する。
+**BPM 系の確定条件:** 本ツールの第1条件は **`minbpm != maxbpm`** とする（上記 §1.1）。数値閾値（例: `maxbpm >= 180`）を追加する場合は同一 `sql` 内で `AND` 連結すればよい（例: `minbpm != maxbpm AND maxbpm >= 180`）。
 
 ### 2.3 `folder/default.json` の `sql` が実際に載るクエリ（beatoraja）
 
@@ -135,7 +151,7 @@ WHERE <ここに default.json の sql が入る>
 
 1. **LR2 原生**で同じ条件セットを使う必要があるか。必要なら `.lr2folder` の定義項と beatoraja 列の対応表を別タスクで作成する。  
 2. **songinfo 無し**環境で `density` 条件をどう扱うか（エラーにする／song 列のみにフォールバックする等）。  
-3. **BPM 条件の UX:** 「曲の BPM が 180 を超える瞬間がある」等の厳密定義は `information` の細列が必要になるか、beatoraja 既存列だけで十分か（プレイヤー向け文言で吸収するか）。
+3. **`minbpm != maxbpm` のみでは捉えられない変速**（ヘッダ上は一定 BPM だが演奏中に変速する譜面）を `information.speedchange` 等で拾う必要があるか。
 
 ---
 
@@ -145,4 +161,4 @@ WHERE <ここに default.json の sql が入る>
 - `folder/default.json`（同梱例）: リポジトリ内 `folder/default.json`  
 - LR2 カスタムフォルダ解説（非公式）: http://analogmania.blog35.fc2.com/blog-entry-162.html  
 
-以上を、実装タスクに落とす際の **要件定義 v0.1** として利用できる。
+以上を、実装タスクに落とす際の **要件定義 v0.2**（§1.1 に出力形式・SQL を確定）として利用できる。
