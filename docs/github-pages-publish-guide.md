@@ -28,9 +28,10 @@ GitHub で **Public** リポジトリを作成します。名前は任意（例:
 
 | パス | 役割 |
 |------|------|
-| `.github/workflows/pages.yml` | `docs/` を GitHub Pages にデプロイするワークフロー |
+| `.github/workflows/pages.yml` | `docs/` を GitHub Pages にデプロイするワークフロー（任意で難易度表フィルタを実行） |
 | `docs/.nojekyll` | Jekyll を無効化し、**そのまま静的ファイル**として配信する |
-| `docs/` 以下の JSON や HTML | 公開したい中身（難易度表 JSON はここに配置） |
+| `docs/` 以下の JSON や HTML | 公開したい中身（難易度表 JSON はここに配置、または Actions で `docs/table/` に生成） |
+| `tools/table-filter/`（任意） | `songdata.db` と SQL で元表を絞り込む場合にコピー |
 
 ### 3. GitHub Pages のソースを「GitHub Actions」にする
 
@@ -56,10 +57,14 @@ git push -u origin main
 - ファイルを `docs/my-table.json` に置いた場合の URL の例:  
   `https://<user>.github.io/<repo>/my-table.json`
 
+## 難易度表の自動生成（songdata.db × SQL）
+
+`tools/table-filter/` を同梱し、`data/songdata.db` と `filter_config.json` を用意すると、push 時に **元表を取得してフィルタした JSON** を `docs/table/` に出力してから Pages 公開できます。詳細は [github-actions-songdata-table-filter.md](./github-actions-songdata-table-filter.md) を参照してください。
+
 ## ローカルでのファイル配置のコツ
 
 - **サイトのルート**は `docs/` です。`docs/foo.json` → `https://<user>.github.io/<repo>/foo.json`
-- リポジトリ直下に JSON を置いても、**このワークフローでは公開されません**（アップロード対象は `docs/` のみ）。JSON は `docs/` に置いてください。
+- リポジトリ直下に JSON を置いても、**このワークフローでは公開されません**（アップロード対象は `docs/` のみ）。JSON は `docs/` に置くか、Actions で `docs/` 以下に生成してください。
 - 大きなバイナリや生成物を Pages に載せる場合は、リポジトリサイズと利用規約に注意してください。
 
 ## トラブルシューティング
