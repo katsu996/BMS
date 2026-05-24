@@ -179,9 +179,11 @@ def main() -> None:
         for i in range(n_src)
     ]
 
+    page_title = str(cfg.get("output_header_name") or "").strip()
     meta = {
         "row_count": len(rows_out),
         "matched_songdata": sum(1 for x in rows_out if x["db"] is not None),
+        "page_title": page_title,
         "sql_where": str(cfg.get("sql_where", "")).strip(),
         "table_rows_source_file": data_source_note,
         "source_table_display_names": display_names,

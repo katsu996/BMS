@@ -8,8 +8,8 @@
     "https://stellabms.xyz/st/table_rec.html"
   ],
   "source_table_display_names": [
-    "Satellite Recommend（サテライト）",
-    "Stella Recommend（ステラ）"
+    "Satellite",
+    "Stella"
   ],
   "source_table_short_names": [
     "sl",
@@ -20,6 +20,7 @@
   "output_dir": "docs/table",
   "output_data_filename": "filtered_data.json",
   "output_header_filename": "filtered_header.json",
+  "output_header_name": "K Original",
   "site_base_url": "",
   "use_relative_data_url": true,
   "custom_level_mapping": [],

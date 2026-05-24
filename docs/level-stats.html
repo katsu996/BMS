@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>難易度表別・レベル別の曲数</title>
+  <title>K Original — レベル別の曲数</title>
   <style>
     :root {
       --bg: #f6f7f9;
@@ -49,11 +49,6 @@
       font-size: 1.05rem;
       margin: 0 0 0.35rem;
       font-weight: 600;
-    }
-    .level-stats .level-stats-note {
-      margin: 0 0 0.75rem;
-      font-size: 0.82rem;
-      color: var(--muted);
     }
     .level-stats-grid {
       display: grid;
@@ -103,16 +98,15 @@
     }
     td.num { text-align: right; font-variant-numeric: tabular-nums; }
     .err { color: #cf222e; padding: 1rem; background: #ffebe9; border-radius: 8px; }
-    footer { margin-top: 1.25rem; font-size: 0.82rem; color: var(--muted); }
     code { background: #f0f3f6; padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.85em; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <p class="nav"><a href="./index.html">← 難易度表一覧（トップ）</a></p>
-    <h1>難易度表別・レベル別の曲数</h1>
+    <p class="nav"><a href="./index.html">← K Original</a></p>
+    <h1>レベル別の曲数</h1>
     <p class="lead">
-      Actions が生成する <code>table/level_stats.json</code> を表示します（トップの一覧とは別 URL）。
+      Actions が生成する <code>table/level_stats.json</code> を表示します。
     </p>
     <div id="meta" class="meta" hidden>
       <dl id="meta-dl"></dl>
@@ -120,12 +114,8 @@
     <div id="err" class="err" hidden></div>
     <section id="level-stats-section" class="level-stats" hidden>
       <h2>集計</h2>
-      <p id="level-stats-note" class="level-stats-note"></p>
       <div id="level-stats-grid" class="level-stats-grid"></div>
     </section>
-    <footer>
-      データは <code>filter_table.py</code> が書き出します。手動運用はルートの <code>README.md</code>、処理の詳細は <code>docs/github-actions-songdata-table-filter.md</code> を参照。
-    </footer>
   </div>
   <script>
 (function () {
@@ -133,7 +123,6 @@
   var metaDl = document.getElementById("meta-dl");
   var errEl = document.getElementById("err");
   var levelSec = document.getElementById("level-stats-section");
-  var levelNote = document.getElementById("level-stats-note");
   var levelGrid = document.getElementById("level-stats-grid");
 
   fetch("./table/level_stats.json", { cache: "no-store" })
@@ -167,20 +156,15 @@
         return;
       }
 
-      var lf = ld.level_field ? String(ld.level_field) : "level";
-      levelNote.textContent =
-        "各元難易度表について、songdata.db の SQL 条件でフィルタに通ったデータ行を、表 JSON の列「" +
-        lf +
-        "」の値ごとに数えたものです（マージの重複除去より前の件数のため、トップ一覧の行数とは一致しません。同一譜面が複数表に載っている場合は表ごとに 1 行ずつ数えます）。";
       levelGrid.innerHTML = "";
       ld.sources.forEach(function (src) {
         var card = document.createElement("div");
         card.className = "level-stats-card";
         var h3 = document.createElement("h3");
-        var shortN = (src.short_name && String(src.short_name).trim()) || "";
         var disp = (src.display_name && String(src.display_name).trim()) || ("表 " + (src.index || ""));
-        h3.textContent = shortN ? "[" + shortN + "] " + disp : disp;
+        h3.textContent = disp;
         card.appendChild(h3);
+        var shortN = (src.short_name && String(src.short_name).trim()) || "";
         var sub = document.createElement("p");
         sub.className = "level-stats-sub";
         sub.textContent = "条件通過 " + (src.total_filtered != null ? src.total_filtered : "—") + " 行（重複除去前）";
@@ -191,7 +175,7 @@
         var thead = document.createElement("thead");
         var trh = document.createElement("tr");
         var th1 = document.createElement("th");
-        th1.textContent = lf;
+        th1.textContent = "レベル";
         var th2 = document.createElement("th");
         th2.textContent = "曲数";
         trh.appendChild(th1);
@@ -203,7 +187,7 @@
         Object.keys(bl).forEach(function (k) {
           var tr = document.createElement("tr");
           var td1 = document.createElement("td");
-          td1.textContent = k;
+          td1.textContent = shortN ? shortN + String(k) : String(k);
           var td2 = document.createElement("td");
           td2.className = "num";
           td2.textContent = String(bl[k]);
