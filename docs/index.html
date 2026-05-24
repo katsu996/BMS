@@ -151,11 +151,15 @@
   var HIDDEN_KEYS = {
     path: true, preview: true, banner: true, stagefile: true, backbmp: true,
     tag: true, parent: true, mode: true, judge: true, feature: true, content: true,
-    favorite: true, adddate: true
+    favorite: true, adddate: true,
+    source_header_json_url: true, source_table_register_url: true
   };
 
   var LABELS = {
-    id: "表 ID", md5: "MD5", sha256: "SHA256", title: "表タイトル", artist: "表アーティスト",
+    id: "表 ID",
+    source_table_index: "出自表（番号）",
+    source_table_names: "出自の難易度表",
+    md5: "MD5", sha256: "SHA256", title: "表タイトル", artist: "表アーティスト",
     level: "表レベル", url: "リンク", url_diff: "差分URL",
     subtitle: "サブタイトル", genre: "ジャンル", subartist: "サブアーティスト",
     folder: "フォルダID", difficulty: "difficulty", maxbpm: "max BPM", minbpm: "min BPM",
@@ -174,6 +178,13 @@
     if (val === null || val === undefined) return "";
     if (typeof val === "number" && Number.isFinite(val)) return String(val);
     if (typeof val === "boolean") return val ? "true" : "false";
+    if (Array.isArray(val)) {
+      if (val.length && val.every(function (x) {
+        return x === null || x === undefined || typeof x === "string" || typeof x === "number" || typeof x === "boolean";
+      })) {
+        return val.map(function (x) { return fmt(x); }).filter(function (s) { return s !== ""; }).join(" · ");
+      }
+    }
     if (typeof val === "object") {
       try { return JSON.stringify(val); } catch (e) { return String(val); }
     }
@@ -197,7 +208,7 @@
         }
       }
     }
-    var tablePri = ["id", "title", "artist", "level", "md5", "sha256", "url", "url_diff"];
+    var tablePri = ["id", "source_table_index", "source_table_names", "title", "artist", "level", "md5", "sha256", "url", "url_diff"];
     var dbPriFull = [
       "title", "subtitle", "artist", "genre", "path", "minbpm", "maxbpm", "notes", "length", "level",
       "difficulty", "md5", "sha256", "folder", "preview", "banner", "stagefile", "backbmp", "tag",

@@ -35,6 +35,22 @@
 3. ヘッダーの **`data_url`** を取得（相対ならヘッダー URL に `urljoin`）。単一ソースかつ **`source_data_url`** があればそちらを優先。
 4. データ配列の各行について **`md5` / `sha256`** が許可集合に含まれる行だけ残す。
 5. **複数ヘッダー**のときは、通過行を **`md5` / `sha256` で重複除去**して 1 本のデータ配列にマージ。`course` は各ヘッダー由来を **配列として連結**。合成ヘッダーは **先頭ヘッダーをベース**にし、`data_url` だけ `SITE_BASE_URL` 上の `filtered_data.json` に差し替え。
+6. マージ時、データ行の各オブジェクトに **出自の難易度表**を示すフィールドを付与する（下記）。
+
+## `filtered_data.json` 各行の「出自の難易度表」メタデータ
+
+`filter_table.py` は、GitHub Pages の一覧で行がどの元表由来か分かるよう、次のキーを **データ行オブジェクトに追加**します（beatoraja が読み込む自作表でも、未知のキーは通常無視されます）。
+
+| キー | 型 | 意味 |
+|------|-----|------|
+| `source_table_index` | 整数 | **`source_header_urls` の並び**で見たときの表番号（**1 始まり**）。同一譜面が複数表に載っている場合は、**先にマージされた表**（重複除去で採用された側）の番号が残ります。 |
+| `source_table_names` | 文字列の配列 | 各ヘッダー JSON の `name` / `Name` / `title` / `Title` のいずれか（なければ `表 N`）から得た **表示名**。複数表に同一譜面があると **複数要素**になります。 |
+| `source_table_register_url` | 文字列（任意） | 設定に書いた **登録用 URL**（例: `table_rec.html`）。`filter_config.json` の `source_header_urls` の同じインデックスの値。 |
+| `source_header_json_url` | 文字列 | 実際に取得した **ヘッダー JSON の HTTPS URL**（HTML から `bmstable` で解決した後の URL）。 |
+
+**重複譜面:** `md5` / `sha256` が同じ行は **1 行にまとめ**、`source_table_names` にだけ後続の表名を追記します。`source_table_index` は更新しません（先勝ち）。
+
+**GitHub Pages の `index.html`:** 列が煩雑にならないよう、`source_header_json_url` と `source_table_register_url` は **画面上は非表示**にしていますが、`filtered_data.json` には残ります。
 
 ## 例: Satellite Recommend（stellabms）
 
