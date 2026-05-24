@@ -90,6 +90,26 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
   - **`sql_where`** に合わない BPM の譜面も落ちます  
 - **トップの表が空:** 上記の「フィルタスキップ」や `filtered_data.json` 未生成の状態で `browser_rows.json` が空になっている可能性があります
 
+### 10. 元表ごとにレベルを「独自難易度」へ写す（`custom_level_mapping`）
+
+複数の元難易度表を `source_header_urls` に並べているとき、**配列の何番目の表か**に応じて「元のレベル値 → 独自レベル」の対応表を持てます（例: 1 番目の表のレベル 12 は独自 12、2 番目の表のレベル 1 は独自 13）。
+
+1. **`tools/table-filter/filter_config.json`** を開く  
+2. **`custom_level_mapping`** に、**`source_header_urls` と同じ長さの配列**を用意する（短い場合は足りない分だけマップ無し、長い場合は余りは無視。警告が Actions ログに出ます）  
+3. 各要素は JSON オブジェクトで、**キーが元表のレベル（文字列）**、**値が独自レベル**（数値でも文字列でも可）  
+4. 出力される列名は既定で **`custom_level`**。変えたい場合は **`custom_level_field`**（英数字とアンダースコアのみ）  
+5. 元表から読む列名が `level` 以外のときは **`custom_level_source_key`** を合わせる  
+6. マップに無いレベルが来たときは **`custom_level_unmapped`** で制御する  
+   - **`omit`（既定）:** `custom_level` 列を付けない（その行だけ欠損）  
+   - **`source`** または **`original`:** 元のレベル値をそのまま `custom_level` にコピー  
+   - **`null`:** JSON の `null` を入れる  
+
+**重複譜面:** 複数表で同じ `md5` / `sha256` が出た場合は **先に列挙したヘッダー側の行だけが残り**、独自レベルもそのソースのマップだけが使われます。
+
+**beatoraja の Table JSON:** `filtered_data.json` の各行に `custom_level` が載ります。beatoraja が未知のキーをどう表示するかは本体・スキン次第です。Pages のトップ表では「独自レベル」列として表示されます。
+
+詳細なデータフローは [docs/github-actions-songdata-table-filter.md](docs/github-actions-songdata-table-filter.md) を参照してください。
+
 ---
 
 ## ドキュメント（仕様・裏側の処理）
