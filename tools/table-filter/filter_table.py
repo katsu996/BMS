@@ -3,6 +3,8 @@
 songdata.db の song テーブルに対する WHERE 断片で許可ハッシュ集合を作り、
 難易度表のヘッダー JSON / データ JSON を突き合わせてフィルタした結果を docs に書き出す。
 
+複数元表をマージするときは各行に source_table_index / source_table_names などを付与する。
+
 beatoraja の songdata.db（テーブル song）を想定。実行は GitHub Actions でもローカルでも可（標準ライブラリのみ）。
 """
 
@@ -82,6 +84,17 @@ def _resolve_bmstable_header_url(page_or_json_url: str) -> str:
         rel = m.group(1).strip()
         return urljoin(u, rel)
     return u
+
+
+def _header_display_name(header_obj: Mapping[str, Any], idx: int) -> str:
+    """ヘッダー JSON の name / title などから、マージ後の行に付与する表ラベルを決める。"""
+    for key in ("name", "Name", "title", "Title"):
+        v = header_obj.get(key)
+        if v is not None:
+            s = str(v).strip()
+            if s:
+                return s
+    return f"表 {idx + 1}"
 
 
 def _merge_course_parts(parts: list[Any]) -> Any:
@@ -370,7 +383,7 @@ def main() -> None:
     print(f"許可ハッシュ数: md5={len(md5s)}, sha256={len(sha256s)} (WHERE {sql_where!r})")
 
     merged_rows: list[dict[str, Any]] = []
-    seen_keys: set[str] = set()
+    row_by_key: dict[str, dict[str, Any]] = {}
     base_header: dict[str, Any] | None = None
     course_parts: list[Any] = []
     total_in = 0
@@ -387,6 +400,8 @@ def main() -> None:
         header_obj = json.loads(raw_header.decode("utf-8"))
         if not isinstance(header_obj, dict):
             _die(f"ヘッダー JSON のトップレベルはオブジェクトである必要があります: {header_json_url}")
+
+        display_name = _header_display_name(header_obj, idx)
 
         if base_header is None:
             base_header = dict(header_obj)
@@ -414,16 +429,42 @@ def main() -> None:
             f"[{idx + 1}/{len(resolved_json_urls)}] {header_json_url} データ: {len(data_obj)} -> {len(filtered_part)}"
         )
 
+        page_or_cfg_url = header_urls_cfg[idx] if idx < len(header_urls_cfg) else ""
+
         for row in filtered_part:
             if not isinstance(row, dict):
                 continue
             dk = _row_dedupe_key(row)
-            if dk is None or dk in seen_keys:
+            new_row = dict(row)
+
+            _apply_custom_level(new_row, idx, cfg)
+
+            if dk is None:
+                new_row["source_table_index"] = idx + 1
+                new_row["source_table_names"] = [display_name]
+                if page_or_cfg_url:
+                    new_row["source_table_register_url"] = page_or_cfg_url
+                new_row["source_header_json_url"] = header_json_url
+                merged_rows.append(new_row)
                 continue
-            seen_keys.add(dk)
-            row_copy: dict[str, Any] = dict(row)
-            _apply_custom_level(row_copy, idx, cfg)
-            merged_rows.append(row_copy)
+
+            if dk in row_by_key:
+                prev = row_by_key[dk]
+                names = prev.get("source_table_names")
+                if not isinstance(names, list):
+                    names = []
+                    prev["source_table_names"] = names
+                if display_name not in names:
+                    names.append(display_name)
+                continue
+
+            new_row["source_table_index"] = idx + 1
+            new_row["source_table_names"] = [display_name]
+            if page_or_cfg_url:
+                new_row["source_table_register_url"] = page_or_cfg_url
+            new_row["source_header_json_url"] = header_json_url
+            row_by_key[dk] = new_row
+            merged_rows.append(new_row)
 
         if "course" in header_obj:
             course_parts.append(_filter_course_structure(header_obj["course"], md5s, sha256s))

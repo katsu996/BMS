@@ -6,6 +6,7 @@
 2. 指定した **元難易度表**（ヘッダー JSON の URL。HTML なら `bmstable` の meta から解決）を取得し、**そのハッシュが集合に含まれる行だけ**残した `filtered_data.json` を出力する。
 3. ヘッダー JSON の **`data_url` を GitHub Pages 上の新しい JSON の URL** に差し替えた `filtered_header.json` を出力する。
 4. `build_pages_table.py` が `filtered_data.json` と `song` を突き合わせ、`browser_rows.json` を生成する。`docs/index.html` が Pages のトップでこれを表表示する。
+5. 複数の元表をマージするとき、**各行に出自情報**（`source_table_index`・`source_table_names` など）を付与する。同一譜面が複数表に載っている場合は `source_table_names` に複数の表名が入る（`source_table_index` は先勝ちの表の番号のまま）。
 
 **運用で触る設定・手順**（SQL、URL、DB の置き場所、push、Table URL）は **[リポジトリ直下の README.md](../../README.md)** を参照してください。
 
