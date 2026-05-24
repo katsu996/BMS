@@ -13,5 +13,12 @@
   "output_dir": "docs/table",
   "output_data_filename": "filtered_data.json",
   "output_header_filename": "filtered_header.json",
-  "site_base_url": ""
+  "site_base_url": "",
+  "custom_level_mapping": [
+    { "12": 12, "11": 11, "10": 10 },
+    { "1": 13, "2": 14, "3": 15 }
+  ],
+  "custom_level_field": "custom_level",
+  "custom_level_source_key": "level",
+  "custom_level_unmapped": "omit"
 }

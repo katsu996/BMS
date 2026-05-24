@@ -15,7 +15,7 @@ import re
 import sqlite3
 import sys
 import urllib.request
-from typing import Any, Mapping, MutableMapping
+from typing import Any, Mapping, MutableMapping, Sequence
 from urllib.parse import urljoin
 
 DEFAULT_CONFIG = "tools/table-filter/filter_config.json"
@@ -201,6 +201,94 @@ def _filter_course_object(obj: MutableMapping[str, Any], md5s: set[str], sha256s
     return new_obj
 
 
+def _validate_json_field_name(name: str, label: str) -> None:
+    if not name:
+        _die(f"{label} が空です。")
+    if len(name) > 64:
+        _die(f"{label} が長すぎます（上限 64 文字）。")
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+        _die(f"{label} は英字またはアンダースコアで始まり、英数字とアンダースコアのみ使えます: {name!r}")
+
+
+def _normalize_level_map(raw: Any) -> dict[str, Any]:
+    """custom_level_mapping の各要素（オブジェクト）をレベル文字列キーへ正規化する。"""
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, Any] = {}
+    for k, v in raw.items():
+        key = str(k).strip()
+        if key:
+            out[key] = v
+    return out
+
+
+def _row_level_lookup_keys(raw_lvl: Any) -> list[str]:
+    """表 JSON のレベル値からマップ検索用キーの候補（型の揺れを吸収）。"""
+    if raw_lvl is None:
+        return []
+    keys: list[str] = []
+    if isinstance(raw_lvl, bool):
+        keys.append(str(raw_lvl).lower())
+        return keys
+    if isinstance(raw_lvl, int):
+        keys.append(str(raw_lvl))
+        return keys
+    if isinstance(raw_lvl, float):
+        if raw_lvl.is_integer():
+            keys.append(str(int(raw_lvl)))
+        else:
+            keys.append(str(raw_lvl).strip())
+        return keys
+    s = str(raw_lvl).strip()
+    if s:
+        keys.append(s)
+        try:
+            f = float(s)
+            if f.is_integer():
+                keys.append(str(int(f)))
+        except ValueError:
+            pass
+    out: list[str] = []
+    seen: set[str] = set()
+    for k in keys:
+        if k and k not in seen:
+            seen.add(k)
+            out.append(k)
+    return out
+
+
+def _apply_custom_level(row: MutableMapping[str, Any], source_idx: int, cfg: Mapping[str, Any]) -> None:
+    """
+    source_header_urls の並びと同じインデックスのマップで、元表のレベルを独自レベル列に書き込む。
+    custom_level_mapping[i] は {元レベル文字列: 独自レベル（数値または文字列）} 形式のオブジェクト。
+    """
+    maps_raw = cfg.get("custom_level_mapping")
+    if not isinstance(maps_raw, Sequence) or isinstance(maps_raw, (str, bytes)):
+        return
+    if source_idx < 0 or source_idx >= len(maps_raw):
+        return
+    m = _normalize_level_map(maps_raw[source_idx])
+    if not m:
+        return
+
+    out_key = str(cfg.get("custom_level_field") or "custom_level").strip() or "custom_level"
+    src_key = str(cfg.get("custom_level_source_key") or "level").strip() or "level"
+    _validate_json_field_name(out_key, "custom_level_field")
+    _validate_json_field_name(src_key, "custom_level_source_key")
+
+    raw_lvl = row.get(src_key)
+    for lk in _row_level_lookup_keys(raw_lvl):
+        if lk in m:
+            row[out_key] = m[lk]
+            return
+
+    fallback = str(cfg.get("custom_level_unmapped") or "omit").strip().lower()
+    if fallback in ("source", "original"):
+        row[out_key] = raw_lvl
+    elif fallback == "null":
+        row[out_key] = None
+
+
 def _filter_course_structure(course: Any, md5s: set[str], sha256s: set[str]) -> Any:
     """course は配列の配列や単一配列など差異があるため、dict で charts を持つノードだけを対象に再帰する。"""
     if isinstance(course, list):
@@ -252,6 +340,19 @@ def main() -> None:
 
     resolved_json_urls = [_resolve_bmstable_header_url(u) for u in header_urls_cfg]
     multi_source = len(resolved_json_urls) > 1
+
+    maps_raw_warn = cfg.get("custom_level_mapping")
+    if isinstance(maps_raw_warn, list) and len(maps_raw_warn) > 0 and resolved_json_urls:
+        if len(maps_raw_warn) < len(resolved_json_urls):
+            print(
+                "警告: custom_level_mapping の要素数が元ヘッダー数より少ないです（足りないインデックスはマップ無し）。",
+                file=sys.stderr,
+            )
+        if len(maps_raw_warn) > len(resolved_json_urls):
+            print(
+                "警告: custom_level_mapping の要素数が元ヘッダー数より多いです（余った要素は無視されます）。",
+                file=sys.stderr,
+            )
 
     site_base = (cfg.get("site_base_url") or os.environ.get("SITE_BASE_URL") or "").strip().rstrip("/")
     if not site_base:
@@ -320,7 +421,9 @@ def main() -> None:
             if dk is None or dk in seen_keys:
                 continue
             seen_keys.add(dk)
-            merged_rows.append(row)
+            row_copy: dict[str, Any] = dict(row)
+            _apply_custom_level(row_copy, idx, cfg)
+            merged_rows.append(row_copy)
 
         if "course" in header_obj:
             course_parts.append(_filter_course_structure(header_obj["course"], md5s, sha256s))

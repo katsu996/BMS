@@ -18,6 +18,7 @@
 - **`source_data_url`**: **単一ヘッダー時のみ**有効。データ JSON の URL でヘッダー内 `data_url` を上書き。**複数ヘッダー時は無視**（警告あり）。
 - **`sql_where`**: `SELECT ... FROM song WHERE (` の直後に連結される条件式。`minbpm` / `maxbpm` は `song` の列名。
 - **`site_base_url`**: ローカル実行時は `https://<owner>.github.io/<repo>/table` のような **ディレクトリ URL（末尾スラッシュなし）** を書く。GitHub Actions では **`SITE_BASE_URL` 環境変数**をワークフローが渡すため空でよい。
+- **`custom_level_mapping`**, **`custom_level_field`**, **`custom_level_source_key`**, **`custom_level_unmapped`**: 元表ごとのレベルを独自列に写す（詳細は [docs/github-actions-songdata-table-filter.md](../../docs/github-actions-songdata-table-filter.md)）。
 - **`enabled`**, **`skip_if_no_songdata`**: フィルタのスキップ挙動。詳細は [docs/github-actions-songdata-table-filter.md](../../docs/github-actions-songdata-table-filter.md)。
 
 ## ローカル実行

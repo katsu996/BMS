@@ -146,6 +146,12 @@ def main() -> None:
         "sql_where": str(cfg.get("sql_where", "")).strip(),
         "source_header_url": header_urls[0] if header_urls else "",
         "source_header_urls": header_urls,
+        "custom_level_field": str(cfg.get("custom_level_field") or "custom_level").strip() or "custom_level",
+        "custom_level_source_key": str(cfg.get("custom_level_source_key") or "level").strip() or "level",
+        "custom_level_unmapped": str(cfg.get("custom_level_unmapped") or "omit").strip() or "omit",
+        "custom_level_mapping_count": len(cfg["custom_level_mapping"])
+        if isinstance(cfg.get("custom_level_mapping"), list)
+        else 0,
     }
     _save_json(browser_path, {"meta": meta, "rows": rows_out})
     print(f"書き出し: {browser_path} （{len(rows_out)} 行、DB 一致 {meta['matched_songdata']}）")

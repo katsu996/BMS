@@ -156,7 +156,7 @@
 
   var LABELS = {
     id: "表 ID", md5: "MD5", sha256: "SHA256", title: "表タイトル", artist: "表アーティスト",
-    level: "表レベル", url: "リンク", url_diff: "差分URL",
+    level: "表レベル", custom_level: "独自レベル", url: "リンク", url_diff: "差分URL",
     subtitle: "サブタイトル", genre: "ジャンル", subartist: "サブアーティスト",
     folder: "フォルダID", difficulty: "difficulty", maxbpm: "max BPM", minbpm: "min BPM",
     length: "長さ(秒?)", notes: "ノーツ数", charthash: "charthash", date: "ファイル日時"
@@ -197,7 +197,7 @@
         }
       }
     }
-    var tablePri = ["id", "title", "artist", "level", "md5", "sha256", "url", "url_diff"];
+    var tablePri = ["id", "title", "artist", "level", "custom_level", "md5", "sha256", "url", "url_diff"];
     var dbPriFull = [
       "title", "subtitle", "artist", "genre", "path", "minbpm", "maxbpm", "notes", "length", "level",
       "difficulty", "md5", "sha256", "folder", "preview", "banner", "stagefile", "backbmp", "tag",
@@ -282,13 +282,22 @@
       } else if (meta.source_header_url) {
         urlLine = String(meta.source_header_url);
       }
-      [
+      var pairs = [
         ["行数", meta.row_count],
         ["songdata と一致", meta.matched_songdata],
         ["SQL 条件", meta.sql_where],
-        ["元ヘッダー URL", urlLine],
-        ["備考", meta.reason]
-      ].forEach(function (pair) {
+        ["元ヘッダー URL", urlLine]
+      ];
+      if (meta.custom_level_mapping_count) {
+        pairs.push(
+          ["独自レベル列", meta.custom_level_field],
+          ["独自レベル元列", meta.custom_level_source_key],
+          ["独自レベル未マップ時", meta.custom_level_unmapped],
+          ["独自レベル マップ数（配列要素数）", meta.custom_level_mapping_count]
+        );
+      }
+      pairs.push(["備考", meta.reason]);
+      pairs.forEach(function (pair) {
         if (pair[1] === undefined || pair[1] === null || pair[1] === "") return;
         var dt = document.createElement("dt");
         dt.textContent = pair[0];
