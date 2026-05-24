@@ -5,7 +5,7 @@
   <!-- beatoraja: Table URL にサイトのトップ（.json で終わらない URL）を入れたとき、jbmstable-parser がこの meta からヘッダー JSON を解決する -->
   <meta name="bmstable" content="table/filtered_header.json" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>難易度表ビューア（等速 BPM フィルタ）</title>
+  <title>K Original</title>
   <style>
     :root {
       --bg: #f6f7f9;
@@ -156,9 +156,9 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>難易度表（songdata 突合・一覧）</h1>
+    <h1 id="site-h1">K Original</h1>
     <p class="lead">
-      Actions で <code>songdata.db</code> の条件（現在: 等速 BPM = <code>minbpm = maxbpm</code>）に合う行だけに絞った難易度表と、ローカル DB の <code>song</code> 列を表示します。
+      Actions で <code>songdata.db</code> の SQL 条件に合う行へ絞り込んだ難易度表と、ローカル DB の <code>song</code> 列を表示します。
       beatoraja の Table URL は、推奨どおり <code>…/table/filtered_header.json</code> の HTTPS URL を登録してください。
       サイトのトップ（<code>…/</code> または <code>…/index.html</code>）だけを登録する場合も、本ページの <code>bmstable</code> メタから同じヘッダーを解決できます。
     </p>
@@ -195,8 +195,7 @@
       </table>
     </div>
     <footer>
-      レベル別の曲数の集計は <a href="./level-stats.html">level-stats.html</a>（<code>table/level_stats.json</code>）を参照してください。
-      手動での運用（DB・SQL・URL・push など）はリポジトリ直下の <code>README.md</code>。Actions の裏側は <code>docs/github-actions-songdata-table-filter.md</code> を参照。
+      <a href="./level-stats.html">レベル別の曲数</a>
     </footer>
   </div>
   <script>
@@ -352,6 +351,12 @@
     .then(function (data) {
       var meta = data.meta || {};
       var rows = Array.isArray(data.rows) ? data.rows : [];
+      var pt = meta.page_title && String(meta.page_title).trim();
+      if (pt) {
+        var h1el = document.getElementById("site-h1");
+        if (h1el) h1el.textContent = pt;
+        document.title = pt;
+      }
       metaDl.innerHTML = "";
       var pairs = [
         ["行数", meta.row_count],

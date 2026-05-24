@@ -494,12 +494,14 @@ def _sanitize_header_for_beatoraja(header: MutableMapping[str, Any], cfg: Mappin
     if isinstance(c, list) and len(c) == 0:
         header.pop("course", None)
 
-    name = str(header.get("name") or "").strip()
-    if not name:
-        fb = str(cfg.get("output_header_name") or "").strip()
-        if not fb:
+    forced = str(cfg.get("output_header_name") or "").strip()
+    if forced:
+        header["name"] = forced
+    else:
+        name = str(header.get("name") or "").strip()
+        if not name:
             fb = "Filtered difficulty table (songdata)"
-        header["name"] = fb
+            header["name"] = fb
 
 
 def main() -> None:

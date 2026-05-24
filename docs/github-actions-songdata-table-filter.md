@@ -26,7 +26,7 @@
 
 - **`data_url`（生成ヘッダー）:** 既定（`use_relative_data_url` 未指定または `true`）では **`filtered_data.json` のようなファイル名のみ**を書き、jbmstable-parser が **ヘッダー JSON の URL と同じディレクトリ**からデータを取得します。`use_relative_data_url: false` のときだけ `site_base_url` または環境変数 **`SITE_BASE_URL`** が必要で、`${SITE_BASE_URL}/filtered_data.json` 形式にします。
 - **`filter_table.py` の終了コード 0:** 設定なし・`enabled: false`・ヘッダー URL 空・`songdata.db` 不在（`skip_if_no_songdata: true`）などでも **0 で終了**し、後段の `build_pages_table.py` が続きます。
-- **`level_stats.json`:** フィルタが実際に走ったときのみ `docs/table/` に出力されます。各元表について **`sql_where` 通過後・`md5`/`sha256` 重複マージ前**のデータ行を、表 JSON のレベル列（既定は `custom_level_source_key` と同じく `level`）の値ごとに数えた集計です。GitHub Pages では **`level-stats.html`** が `./table/level_stats.json` を直接読み込んで表示します（トップの `index.html` とは別 URL）。
+- **`level_stats.json`:** フィルタが実際に走ったときのみ `docs/table/` に出力されます。各元表について **`sql_where` 通過後・`md5`/`sha256` 重複マージ前**のデータ行を、表 JSON のレベル列（既定は `custom_level_source_key` と同じく `level`）の値ごとに数えた集計です。GitHub Pages では **`level-stats.html`** が `./table/level_stats.json` を直接読み込んで表示します。
 - **`build_pages_table.py`:** `filtered_data_enriched.json` が無ければ `filtered_data.json` を読みます。どちらも無い場合は **空の `browser_rows.json`**（理由を `meta` に記録）を書き、Pages デプロイは失敗させません。
 
 ## `filter_table.py` のデータフロー（概要）
@@ -75,7 +75,7 @@ beatoraja は多くの場合 **ヘッダー JSON の URL**（`…/table/filtered
 
 ### `source_table_display_names`（任意）
 
-`filter_config.json` の **`source_table_display_names`** を、`source_header_urls`（正規化後の **本数と同じ順・同じ長さ推奨**）の配列として書くと、上記 **`source_table_names`** の各要素は **設定の文字列を優先**します（stellabms の **SL / ST** のように、URL や略称ではなく **Satellite Recommend / Stella Recommend** などの読みやすい名前を Pages と行データに揃えたいときに使います）。要素が空文字のインデックスは、従来どおりヘッダー JSON の `name` / `title` にフォールバックします。要素数がヘッダー数とずれると Actions ログに警告が出ます。
+`filter_config.json` の **`source_table_display_names`** を、`source_header_urls`（正規化後の **本数と同じ順・同じ長さ推奨**）の配列として書くと、上記 **`source_table_names`** の各要素は **設定の文字列を優先**します（stellabms の **SL / ST** のように、URL や略称ではなく **Satellite** / **Stella** などの短い表示名を Pages と行データに揃えたいときに使います）。要素が空文字のインデックスは、従来どおりヘッダー JSON の `name` / `title` にフォールバックします。要素数がヘッダー数とずれると Actions ログに警告が出ます。
 
 ### `source_table_short_names`（任意）
 
@@ -108,9 +108,9 @@ beatoraja は多くの場合 **ヘッダー JSON の URL**（`…/table/filtered
 - **重複行:** 複数ソースで同一ハッシュが出た場合は **先勝ち**のソースインデックスだけがマップに使われます（2 枚目以降は `source_table_names` / `source_table_short_names` にだけ表名・略称が足され、`custom_level` は上書きしません）。
 - **`course` 内のチャート行**には現状マップを適用していません（データ配列のメイン行のみ）。
 
-## 例: Satellite Recommend（stellabms）
+## 例: stellabms Satellite（`table_rec.html`）
 
-[Satellite Recommend（`table_rec.html`）](https://stellabms.xyz/sl/table_rec.html) は `<meta name="bmstable" content="header_rec.json" />` により、同ディレクトリの **`header_rec.json`** をヘッダーとして読みます。既定では `source_header_urls` に SL / ST の `table_rec.html` が並んでいます。
+[stellabms の Satellite 用 `table_rec.html`](https://stellabms.xyz/sl/table_rec.html) は `<meta name="bmstable" content="header_rec.json" />` により、同ディレクトリの **`header_rec.json`** をヘッダーとして読みます。既定では `source_header_urls` に SL / ST の `table_rec.html` が並んでいます。
 
 **フィルタ後の行数が 0 に近い場合:** 元表のハッシュと **`songdata.db` の `song` に存在する行**の交差だけが残ります。さらに **`sql_where`** で BPM などを絞るため、**DB に無い譜面**や **条件不一致**は落ちます。表を埋めたい場合は **beatoraja で譜面を読み込んだうえで DB を更新**し、再度コミットしてください。
 
