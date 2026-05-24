@@ -21,36 +21,36 @@
     <div id="meta" class="meta shadcn-card" hidden>
       <dl id="meta-dl"></dl>
     </div>
-    <div class="sortbar shadcn-card">
-      <label for="sort-col">行の並び替え（基準列）</label>
-      <select id="sort-col" class="shadcn-select" disabled>
-        <option value="">元の順（データの行順）</option>
-      </select>
-      <label for="sort-dir">順序</label>
-      <select id="sort-dir" class="shadcn-select" disabled>
-        <option value="asc">昇順</option>
-        <option value="desc">降順</option>
-      </select>
-    </div>
     <div class="filter-collapse shadcn-card">
-      <button type="button" class="shadcn-btn filter-collapse-toggle" id="filter-panel-toggle" aria-expanded="false" aria-controls="filter-panel">
-        <span>絞り込み</span>
+      <button type="button" class="shadcn-btn filter-collapse-toggle" id="toolbar-panel-toggle" aria-expanded="false" aria-controls="toolbar-panel">
+        <span>並び替え・絞り込み・列の表示</span>
         <span class="filter-chevron" aria-hidden="true">▼</span>
       </button>
-      <div id="filter-panel" class="filter-collapse-panel" hidden role="region" aria-labelledby="filter-panel-toggle">
+      <div id="toolbar-panel" class="filter-collapse-panel" hidden role="region" aria-labelledby="toolbar-panel-toggle">
+        <div class="sortbar">
+          <label for="sort-col">行の並び替え（基準列）</label>
+          <select id="sort-col" class="shadcn-select" disabled>
+            <option value="">元の順（データの行順）</option>
+          </select>
+          <label for="sort-dir">順序</label>
+          <select id="sort-dir" class="shadcn-select" disabled>
+            <option value="asc">昇順</option>
+            <option value="desc">降順</option>
+          </select>
+        </div>
         <div class="toolbar">
           <label for="q">キーワード</label>
           <input type="search" id="q" class="shadcn-input" placeholder="タイトル・ハッシュなど" autocomplete="off" disabled />
           <span id="count" class="lead" style="margin:0"></span>
         </div>
         <div id="filter-src-bar" class="filter-src" hidden></div>
+        <div id="colbar" class="colbar" hidden>
+          <p class="colbar-lead">
+            列の表示切替（1 列ごとにチェック）。追加の列にチェックを入れると表に出ます。
+          </p>
+          <div id="colbar-inner"></div>
+        </div>
       </div>
-    </div>
-    <div id="colbar" class="colbar shadcn-card" hidden>
-      <p class="colbar-lead">
-        列の表示切替（1 列ごとにチェック）。追加の列にチェックを入れると表に出ます。
-      </p>
-      <div id="colbar-inner"></div>
     </div>
     <div id="err" class="err" hidden></div>
     <div class="scroll shadcn-card" id="scroll" hidden>
@@ -59,15 +59,17 @@
         <tbody id="tbody"></tbody>
       </table>
     </div>
-    <footer>
+    <footer class="site-footer">
+      <a class="shadcn-link" href="./table/filtered_header.json" target="_blank" rel="noopener noreferrer">beatoraja 用難易度表ヘッダー（<code>filtered_header.json</code>）</a>
+      <span class="footer-sep" aria-hidden="true">·</span>
       <a class="shadcn-link" href="./level-stats.html">元難易度表別の曲数</a>
     </footer>
   </div>
   <script>
 (function () {
-  (function initFilterCollapse() {
-    var btn = document.getElementById("filter-panel-toggle");
-    var panel = document.getElementById("filter-panel");
+  (function initToolbarCollapse() {
+    var btn = document.getElementById("toolbar-panel-toggle");
+    var panel = document.getElementById("toolbar-panel");
     var chev = btn && btn.querySelector(".filter-chevron");
     if (!btn || !panel) return;
     btn.addEventListener("click", function () {
