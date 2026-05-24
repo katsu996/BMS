@@ -152,12 +152,26 @@ def main() -> None:
         f"{i + 1}. {display_names[i] if display_names[i] else f'表 {i + 1}'}" for i in range(n_src)
     ]
 
+    short_raw = cfg.get("source_table_short_names")
+    short_names: list[str] = []
+    for i in range(n_src):
+        s = ""
+        if isinstance(short_raw, list) and i < len(short_raw):
+            s = str(short_raw[i]).strip()
+        short_names.append(s)
+    legend_short = [
+        f"{i + 1}. {short_names[i] if short_names[i] else display_names[i] or f'表 {i + 1}'}"
+        for i in range(n_src)
+    ]
+
     meta = {
         "row_count": len(rows_out),
         "matched_songdata": sum(1 for x in rows_out if x["db"] is not None),
         "sql_where": str(cfg.get("sql_where", "")).strip(),
         "source_table_display_names": display_names,
+        "source_table_short_names": short_names,
         "source_table_legend": legend,
+        "source_table_legend_short": legend_short,
         "custom_level_field": str(cfg.get("custom_level_field") or "custom_level").strip() or "custom_level",
         "custom_level_source_key": str(cfg.get("custom_level_source_key") or "level").strip() or "level",
         "custom_level_unmapped": str(cfg.get("custom_level_unmapped") or "omit").strip() or "omit",

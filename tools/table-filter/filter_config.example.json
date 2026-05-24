@@ -12,6 +12,10 @@
     "Satellite Recommend（サテライト）",
     "Stella Recommend（ステラ）"
   ],
+  "source_table_short_names": [
+    "sl",
+    "st"
+  ],
   "source_header_url": "",
   "source_data_url": "",
   "output_dir": "docs/table",
