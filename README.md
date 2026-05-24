@@ -98,6 +98,8 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
 
 （`<owner>` と `<repo>` は実際の値に置き換えてください。）
 
+**Pages のトップ:** `index.html` のフッターに、上記と同じパスの **`filtered_header.json` を開くリンク**があります（新しいタブで JSON が表示されます）。Table URL の確認や共有に使えます。
+
 **サイトのトップだけ**（例: `https://<ユーザー>.github.io/<リポジトリ名>/`）を Table URL に入れると、beatoraja は **HTML モード**でページを取得します。トップの **`docs/index.html` に `<meta name="bmstable" content="table/filtered_header.json">` を入れてある**ため、この URL でもヘッダー JSON に辿り着けます。ただし **末尾スラッシュ無し**（`…/repo`）の URL では jbmstable-parser の相対解決がずれることがあるため、**末尾 `/` 付き**か、確実には上記の **`filtered_header.json` 直リンク**を推奨します。
 
 生成される `filtered_header.json` の **`data_url` は既定で `filtered_data.json` のみ**（ヘッダーと同じパス上の相対指定）です。`SITE_BASE_URL` の誤りでデータが取れない問題を避けるための挙動です。**絶対 URL で出したい場合**は `tools/table-filter/filter_config.json` で **`use_relative_data_url` を `false`** にし、**`site_base_url`**（またはローカルでは環境変数 **`SITE_BASE_URL`**）をセットしてください。
