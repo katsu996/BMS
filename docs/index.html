@@ -70,6 +70,50 @@
       border-radius: 6px;
       font-size: 0.9rem;
     }
+    .colbar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem 0.65rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.78rem;
+      max-height: 16rem;
+      overflow: auto;
+    }
+    .colbar > .colbar-lead {
+      margin: 0 0 0.4rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .colbar-group { margin-bottom: 0.45rem; }
+    .colbar-group:last-child { margin-bottom: 0; }
+    .colbar-group-title {
+      font-weight: 600;
+      margin: 0 0 0.3rem;
+      font-size: 0.8rem;
+      color: var(--text);
+    }
+    .colbar-group-title.t { color: #1d4ed8; }
+    .colbar-group-title.d { color: #15803d; }
+    .colpick-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem 0.55rem;
+      align-items: center;
+    }
+    label.colpick {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      white-space: nowrap;
+      cursor: pointer;
+      padding: 0.12rem 0.28rem;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+    label.colpick:hover { border-color: var(--border); background: #fafbfc; }
+    label.colpick input { margin: 0; }
     .scroll {
       overflow: auto;
       max-height: min(78vh, 900px);
@@ -134,6 +178,12 @@
       <input type="search" id="q" placeholder="タイトル・ハッシュなど" autocomplete="off" disabled />
       <span id="count" class="lead" style="margin:0"></span>
     </div>
+    <div id="colbar" class="colbar" hidden>
+      <p class="colbar-lead">
+        列の表示切替（1 列ごとにチェック）。初期状態は従来どおり表示していた列のみオンです。追加の列にチェックを入れると表に出ます。
+      </p>
+      <div id="colbar-inner"></div>
+    </div>
     <div id="err" class="err" hidden></div>
     <div class="scroll" id="scroll" hidden>
       <table id="tbl">
@@ -147,7 +197,7 @@
   </div>
   <script>
 (function () {
-  /** 画面上から隠す列（難易度表 JSON / DB 共通キー名） */
+  /** 既定でオフにする列（チェックボックスで表示可能） */
   var HIDDEN_KEYS = {
     path: true, preview: true, banner: true, stagefile: true, backbmp: true,
     tag: true, parent: true, mode: true, judge: true, feature: true, content: true,
@@ -159,7 +209,8 @@
   var LABELS = {
     id: "表 ID",
     source_table_index: "出自表（番号）",
-    source_table_names: "出自の難易度表",
+    source_table_short_names: "出自（略）",
+    source_table_names: "出自（フル）",
     md5: "MD5", sha256: "SHA256", title: "表タイトル", artist: "表アーティスト",
     level: "表レベル", custom_level: "独自レベル", url: "リンク", url_diff: "差分URL",
     subtitle: "サブタイトル", genre: "ジャンル", subartist: "サブアーティスト",
@@ -196,21 +247,20 @@
     return typeof val === "number" && Number.isFinite(val);
   }
 
-  /** 表示列の順序: よく使うキーを先頭、その他はキー名の A→Z（PR #10 以前の方針） */
-  function collectKeys(rows, key) {
+  /** 行データに現れるすべてのキー（非表示列も含む） */
+  function collectAllKeys(rows, key) {
     var s = {};
     for (var i = 0; i < rows.length; i++) {
       var o = rows[i][key];
       if (o && typeof o === "object") {
         var ks = Object.keys(o);
         for (var j = 0; j < ks.length; j++) {
-          var k = ks[j];
-          if (!HIDDEN_KEYS[k]) s[k] = true;
+          s[ks[j]] = true;
         }
       }
     }
     var tablePri = [
-      "id", "source_table_index", "source_table_names", "title", "artist", "level", "custom_level",
+      "id", "source_table_index", "source_table_short_names", "source_table_names", "title", "artist", "level", "custom_level",
       "md5", "sha256"
     ];
     var dbPriFull = [
@@ -218,15 +268,18 @@
       "difficulty", "md5", "sha256", "folder", "preview", "banner", "stagefile", "backbmp", "tag",
       "subartist", "parent", "mode", "judge", "feature", "content", "date", "adddate", "favorite", "charthash"
     ];
-    var dbPri = dbPriFull.filter(function (k) { return !HIDDEN_KEYS[k]; });
-    var pri = key === "table" ? tablePri : dbPri;
+    var pri = key === "table" ? tablePri : dbPriFull;
+    var arr = Object.keys(s);
     var first = [];
     for (var p = 0; p < pri.length; p++) {
       if (s[pri[p]]) first.push(pri[p]);
     }
-    var arr = Object.keys(s);
     var rest = arr.filter(function (k) { return pri.indexOf(k) < 0; }).sort();
     return first.concat(rest);
+  }
+
+  function defaultColumnVisible(k) {
+    return !HIDDEN_KEYS[k];
   }
 
   function esc(s) {
@@ -238,7 +291,7 @@
   function cellHtml(val) {
     var t = fmt(val);
     if (!t) return '<td class="empty">—</td>';
-    if (/^https?:\/\//i.test(t)) return '<td><a href="' + esc(t) + '" rel="noopener noreferrer">' + esc(t) + '</a></td>';
+    if (/^https?:\/\//i.test(t)) return '<td><a href="' + esc(t) + '" rel="noopener noreferrer">' + esc(t) + "</a></td>";
     var num = isNumericLike(val);
     return '<td class="' + (num ? "num" : "") + '">' + esc(t) + "</td>";
   }
@@ -274,6 +327,8 @@
   var metaDl = document.getElementById("meta-dl");
   var errEl = document.getElementById("err");
   var scrollEl = document.getElementById("scroll");
+  var colbarEl = document.getElementById("colbar");
+  var colbarInner = document.getElementById("colbar-inner");
   var thead = document.getElementById("thead");
   var tbody = document.getElementById("tbody");
   var q = document.getElementById("q");
@@ -299,6 +354,10 @@
       if (Array.isArray(leg) && leg.length) {
         pairs.push(["元難易度表（表示名）", leg.join(" ／ ")]);
       }
+      var legS = meta.source_table_legend_short;
+      if (Array.isArray(legS) && legS.length) {
+        pairs.push(["元難易度表（略称）", legS.join(" ／ ")]);
+      }
       if (meta.custom_level_mapping_count) {
         pairs.push(
           ["独自レベル列", meta.custom_level_field],
@@ -319,77 +378,126 @@
       });
       metaEl.hidden = metaDl.children.length === 0;
 
-      var tKeys = collectKeys(rows, "table");
-      var dKeys = collectKeys(rows, "db");
+      var allTKeys = collectAllKeys(rows, "table");
+      var allDKeys = collectAllKeys(rows, "db");
+      var visT = {};
+      var visD = {};
+      allTKeys.forEach(function (k) { visT[k] = defaultColumnVisible(k); });
+      allDKeys.forEach(function (k) { visD[k] = defaultColumnVisible(k); });
 
-      var trh1 = document.createElement("tr");
-      var thT = document.createElement("th");
-      thT.colSpan = Math.max(1, tKeys.length);
-      thT.className = "group-t";
-      thT.textContent = "難易度表 JSON の列";
-      trh1.appendChild(thT);
-      var thD = document.createElement("th");
-      thD.colSpan = Math.max(1, dKeys.length);
-      thD.className = "group-d";
-      thD.textContent = "songdata.db（song）の列";
-      trh1.appendChild(thD);
-      thead.appendChild(trh1);
+      function visibleKeys(allKeys, vis) {
+        return allKeys.filter(function (k) { return vis[k]; });
+      }
 
-      var trh2 = document.createElement("tr");
-      tKeys.forEach(function (k) {
-        var th = document.createElement("th");
-        th.className = "group-t";
-        th.textContent = tableColTitle(k);
-        trh2.appendChild(th);
-      });
-      if (!tKeys.length) {
-        var th0 = document.createElement("th");
-        th0.className = "group-t";
-        th0.textContent = "（表データなし）";
-        trh2.appendChild(th0);
+      function rebuildThead(vTKeys, vDKeys) {
+        thead.innerHTML = "";
+        var trh1 = document.createElement("tr");
+        var thT = document.createElement("th");
+        thT.colSpan = Math.max(1, vTKeys.length);
+        thT.className = "group-t";
+        thT.textContent = "難易度表 JSON の列";
+        trh1.appendChild(thT);
+        var thD = document.createElement("th");
+        thD.colSpan = Math.max(1, vDKeys.length);
+        thD.className = "group-d";
+        thD.textContent = "songdata.db（song）の列";
+        trh1.appendChild(thD);
+        thead.appendChild(trh1);
+
+        var trh2 = document.createElement("tr");
+        vTKeys.forEach(function (k) {
+          var th = document.createElement("th");
+          th.className = "group-t";
+          th.textContent = tableColTitle(k);
+          trh2.appendChild(th);
+        });
+        if (!vTKeys.length) {
+          var th0 = document.createElement("th");
+          th0.className = "group-t";
+          th0.textContent = "（表データなし）";
+          trh2.appendChild(th0);
+        }
+        vDKeys.forEach(function (k) {
+          var th = document.createElement("th");
+          th.className = "group-d";
+          th.textContent = dbColTitle(k);
+          trh2.appendChild(th);
+        });
+        if (!vDKeys.length) {
+          var th1 = document.createElement("th");
+          th1.className = "group-d";
+          th1.textContent = "（DB列なし）";
+          trh2.appendChild(th1);
+        }
+        thead.appendChild(trh2);
       }
-      dKeys.forEach(function (k) {
-        var th = document.createElement("th");
-        th.className = "group-d";
-        th.textContent = dbColTitle(k);
-        trh2.appendChild(th);
-      });
-      if (!dKeys.length) {
-        var th1 = document.createElement("th");
-        th1.className = "group-d";
-        th1.textContent = "（DB列なし）";
-        trh2.appendChild(th1);
+
+      function buildColPicker() {
+        colbarInner.innerHTML = "";
+        function addGroup(title, cls, allKeys, vis, prefix) {
+          var wrap = document.createElement("div");
+          wrap.className = "colbar-group";
+          var h = document.createElement("div");
+          h.className = "colbar-group-title " + cls;
+          h.textContent = title;
+          wrap.appendChild(h);
+          var picks = document.createElement("div");
+          picks.className = "colpick-wrap";
+          allKeys.forEach(function (k) {
+            var lab = document.createElement("label");
+            lab.className = "colpick";
+            var inp = document.createElement("input");
+            inp.type = "checkbox";
+            inp.checked = !!vis[k];
+            inp.addEventListener("change", function () {
+              vis[k] = inp.checked;
+              var vT = visibleKeys(allTKeys, visT);
+              var vD = visibleKeys(allDKeys, visD);
+              rebuildThead(vT, vD);
+              refresh();
+            });
+            lab.appendChild(inp);
+            var span = document.createElement("span");
+            span.textContent = prefix === "表: " ? ("表: " + tableColTitle(k)) : ("DB: " + dbColTitle(k));
+            lab.appendChild(span);
+            picks.appendChild(lab);
+          });
+          wrap.appendChild(picks);
+          colbarInner.appendChild(wrap);
+        }
+        addGroup("難易度表 JSON の列", "t", allTKeys, visT, "表: ");
+        addGroup("songdata.db（song）の列", "d", allDKeys, visD, "DB: ");
       }
-      thead.appendChild(trh2);
 
       function rowText(r) {
         var t = r.table || {};
         var d = r.db || {};
-        return tKeys.concat(dKeys).map(function (k) {
-          if (tKeys.indexOf(k) >= 0) return fmt(t[k]);
-          return fmt(d[k]);
-        }).join(" ") + " " + JSON.stringify(t) + " " + JSON.stringify(d);
+        var parts = [];
+        allTKeys.forEach(function (k) { parts.push(fmt(t[k])); });
+        allDKeys.forEach(function (k) { parts.push(fmt(d ? d[k] : "")); });
+        return parts.join(" ") + " " + JSON.stringify(t) + " " + JSON.stringify(d);
       }
 
       function fillSortSelect() {
         while (sortCol.options.length > 1) sortCol.remove(1);
-        tKeys.forEach(function (k) {
+        allTKeys.forEach(function (k) {
           var opt = document.createElement("option");
           opt.value = "table:" + k;
           opt.textContent = "表: " + tableColTitle(k);
           sortCol.appendChild(opt);
         });
-        dKeys.forEach(function (k) {
+        allDKeys.forEach(function (k) {
           var opt = document.createElement("option");
           opt.value = "db:" + k;
           opt.textContent = "DB: " + dbColTitle(k);
           sortCol.appendChild(opt);
         });
       }
+
       fillSortSelect();
-      if (tKeys.indexOf("title") >= 0) {
+      if (allTKeys.indexOf("title") >= 0) {
         sortCol.value = "table:title";
-      } else if (dKeys.indexOf("title") >= 0) {
+      } else if (allDKeys.indexOf("title") >= 0) {
         sortCol.value = "db:title";
       } else {
         sortCol.value = "";
@@ -399,19 +507,21 @@
       sortDir.disabled = false;
 
       function render(list) {
+        var vTKeys = visibleKeys(allTKeys, visT);
+        var vDKeys = visibleKeys(allDKeys, visD);
         tbody.innerHTML = "";
         list.forEach(function (r) {
           var tr = document.createElement("tr");
           var t = r.table || {};
           var d = r.db || {};
-          tKeys.forEach(function (k) {
+          vTKeys.forEach(function (k) {
             tr.insertAdjacentHTML("beforeend", cellHtml(t[k]));
           });
-          if (!tKeys.length) tr.insertAdjacentHTML("beforeend", "<td class=\"empty\">—</td>");
-          dKeys.forEach(function (k) {
+          if (!vTKeys.length) tr.insertAdjacentHTML("beforeend", "<td class=\"empty\">—</td>");
+          vDKeys.forEach(function (k) {
             tr.insertAdjacentHTML("beforeend", cellHtml(d ? d[k] : ""));
           });
-          if (!dKeys.length) tr.insertAdjacentHTML("beforeend", "<td class=\"empty\">—</td>");
+          if (!vDKeys.length) tr.insertAdjacentHTML("beforeend", "<td class=\"empty\">—</td>");
           tbody.appendChild(tr);
         });
         countEl.textContent = list.length + " / " + rows.length + " 行を表示";
@@ -437,6 +547,10 @@
       function refresh() {
         render(applySort(applySearch()));
       }
+
+      buildColPicker();
+      rebuildThead(visibleKeys(allTKeys, visT), visibleKeys(allDKeys, visD));
+      colbarEl.hidden = false;
 
       refresh();
       q.disabled = false;

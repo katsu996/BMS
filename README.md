@@ -52,9 +52,9 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
 
 **単一ソース時のみ:** **`source_data_url`** にデータ JSON の URL を書くと、ヘッダー内の `data_url` の代わりに使われます。**複数ヘッダー**（`source_header_urls` が 2 件以上）のときは **各ヘッダーの `data_url` のみ**が使われ、`source_data_url` は無視されます（警告が出ます）。
 
-マージ後の各行には **`source_table_index` / `source_table_names`** など、どの元難易度表の譜面として採用されたかが付きます（詳細は [docs/github-actions-songdata-table-filter.md](docs/github-actions-songdata-table-filter.md) の「出自の難易度表」節）。
+マージ後の各行には **`source_table_index` / `source_table_short_names` / `source_table_names`** など、どの元難易度表の譜面として採用されたかが付きます（詳細は [docs/github-actions-songdata-table-filter.md](docs/github-actions-songdata-table-filter.md) の「出自の難易度表」節）。
 
-**Pages に出す表の表示名（任意）:** **`source_table_display_names`** を `source_header_urls` と同じ長さの文字列配列で書くと、行の「出自の難易度表」列と、Pages トップのメタ「元難易度表（表示名）」にその名前が使われます（stellabms の SL / ST を「Satellite Recommend」「Stella Recommend」などに変えたいとき）。空の要素はヘッダー JSON の `name` / `title` にフォールバックします。Pages の **`browser_rows.json` には元 URL を載せません**（取得元 URL はこの `filter_config.json` を参照）。
+**Pages に出す表の表示名（任意）:** **`source_table_display_names`** を `source_header_urls` と同じ長さの文字列配列で書くと、行の「出自（フル）」列と、Pages トップのメタ「元難易度表（表示名）」にその名前が使われます（stellabms の SL / ST を「Satellite Recommend」「Stella Recommend」などに変えたいとき）。**`source_table_short_names`** も同じ長さの配列で書くと、行の「出自（略）」列（例: `sl` / `st`）とメタ「元難易度表（略称）」に使われます（空の要素はそのインデックスの略称なし）。**`source_table_display_names`** の空要素だけ、ヘッダー JSON の `name` / `title` にフォールバックします。Pages の **`browser_rows.json` には元 URL を載せません**（取得元 URL はこの `filter_config.json` を参照）。
 
 ### 5. フィルタそのものをオフにしたい・難易度表取得を止めたい
 

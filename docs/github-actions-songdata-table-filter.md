@@ -45,17 +45,22 @@
 | キー | 型 | 意味 |
 |------|-----|------|
 | `source_table_index` | 整数 | **`source_header_urls` の並び**で見たときの表番号（**1 始まり**）。同一譜面が複数表に載っている場合は、**先にマージされた表**（重複除去で採用された側）の番号が残ります。 |
+| `source_table_short_names` | 文字列の配列 | **`source_table_short_names[i]`**（`filter_config.json`）が非空ならその略称（例: `sl`）。無ければ **空配列**になり得ます。複数表に同一譜面があると **`source_table_names` と同様に**後続の略称を追記します。 |
 | `source_table_names` | 文字列の配列 | **`source_table_display_names[i]`** が非空ならそれを、無ければ各ヘッダー JSON の `name` / `Name` / `title` / `Title`（なければ `表 N`）から得た **表示名**。複数表に同一譜面があると **複数要素**になります。 |
 | `source_table_register_url` | 文字列（任意） | 設定に書いた **登録用 URL**（例: `table_rec.html`）。`filter_config.json` の `source_header_urls` の同じインデックスの値。 |
 | `source_header_json_url` | 文字列 | 実際に取得した **ヘッダー JSON の HTTPS URL**（HTML から `bmstable` で解決した後の URL）。 |
 
-**重複譜面:** `md5` / `sha256` が同じ行は **1 行にまとめ**、`source_table_names` にだけ後続の表名を追記します。`source_table_index` は更新しません（先勝ち）。
+**重複譜面:** `md5` / `sha256` が同じ行は **1 行にまとめ**、`source_table_names` と `source_table_short_names` にだけ後続の表の表示名・略称を追記します。`source_table_index` は更新しません（先勝ち）。
 
-**GitHub Pages の `index.html`:** 列が煩雑にならないよう、`source_header_json_url` と `source_table_register_url` は **画面上は非表示**にしていますが、`filtered_data.json` には残ります。**`url` / `url_diff`** も Pages の表では非表示です（beatoraja 用の `filtered_data.json` には元表の値が残ります）。
+**GitHub Pages の `index.html`:** 列が煩雑にならないよう、`source_header_json_url` と `source_table_register_url` は **画面上は非表示**にしていますが、`filtered_data.json` には残ります。**`url` / `url_diff`** も Pages の表では既定でオフ（列表示のチェックボックスでオンにできる）です（beatoraja 用の `filtered_data.json` には元表の値が残ります）。**出自（略）**と**出自（フル）**は別列です。
 
 ### `source_table_display_names`（任意）
 
 `filter_config.json` の **`source_table_display_names`** を、`source_header_urls`（正規化後の **本数と同じ順・同じ長さ推奨**）の配列として書くと、上記 **`source_table_names`** の各要素は **設定の文字列を優先**します（stellabms の **SL / ST** のように、URL や略称ではなく **Satellite Recommend / Stella Recommend** などの読みやすい名前を Pages と行データに揃えたいときに使います）。要素が空文字のインデックスは、従来どおりヘッダー JSON の `name` / `title` にフォールバックします。要素数がヘッダー数とずれると Actions ログに警告が出ます。
+
+### `source_table_short_names`（任意）
+
+同じく **`source_table_short_names`** を同じ長さの配列で書くと、行の **`source_table_short_names`**（略称の配列）にその文字列が入ります（例: `sl` / `st`）。空要素のインデックスは略称が空になり、その行の略称列は **`source_table_names` と同じ並びで**フル名だけが意味を持つ場合があります。要素数がずれると Actions ログに警告が出ます。
 
 ## `browser_rows.json` の `meta`（Pages 向け）
 
@@ -64,7 +69,11 @@
 | キー | 意味 |
 |------|------|
 | `source_table_display_names` | 設定どおりの表示名配列（未設定インデックスは空文字）。 |
+| `source_table_short_names` | 設定どおりの略称配列（未設定インデックスは空文字）。 |
 | `source_table_legend` | `["1. 表示名A", "2. 表示名B", ...]` 形式。`index.html` のメタ「元難易度表（表示名）」にそのまま使います。 |
+| `source_table_legend_short` | `["1. sl", "2. st", ...]` のように略称版。メタ「元難易度表（略称）」に使います。 |
+
+**Pages トップの列表示:** `docs/index.html` は **全列をチェックボックスで表示／非表示**できます。既定でオフの列は従来どおり（`path`・`url` など）で、必要ならチェックで表示します。
 
 ## 独自レベル（`custom_level_mapping`）
 
@@ -74,7 +83,7 @@
 - **`custom_level_field`:** 出力 JSON に載せるキー名（既定 `custom_level`）。英字または `_` で始まり英数字と `_` のみ。
 - **`custom_level_source_key`:** 元表の行から読むレベル列名（既定 `level`）。
 - **`custom_level_unmapped`:** マップにキーが無かったとき。`omit`（既定） / `source` または `original` / `null`。
-- **重複行:** 複数ソースで同一ハッシュが出た場合は **先勝ち**のソースインデックスだけがマップに使われます（2 枚目以降は `source_table_names` にだけ表名が足され、`custom_level` は上書きしません）。
+- **重複行:** 複数ソースで同一ハッシュが出た場合は **先勝ち**のソースインデックスだけがマップに使われます（2 枚目以降は `source_table_names` / `source_table_short_names` にだけ表名・略称が足され、`custom_level` は上書きしません）。
 - **`course` 内のチャート行**には現状マップを適用していません（データ配列のメイン行のみ）。
 
 ## 例: Satellite Recommend（stellabms）
