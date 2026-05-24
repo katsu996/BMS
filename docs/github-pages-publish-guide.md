@@ -1,5 +1,7 @@
 # 別リポジトリで GitHub Pages に公開する手順
 
+**本リポジトリで日々行う手動作業**（DB 差し替え、SQL、URL、push、Table URL 登録など）は **[ルートの README.md](../README.md)** に集約しています。本文書は **Pages の公開の仕組み**と、**別の空リポジトリにこのテンプレートを複製する**ときの手順に重点を置きます。
+
 beatoraja の難易度表 JSON などを **HTTPS で直リンク**できる場所に置く用途を想定しています。公開用リポジトリは **公開（Public）** にすると、無料の GitHub Pages で誰でも取得できます。
 
 ## 前提
@@ -59,7 +61,10 @@ git push -u origin main
 
 ## 難易度表の自動生成（songdata.db × SQL）
 
-`tools/table-filter/` を同梱し、`data/songdata.db` と `filter_config.json` を用意すると、push 時に **元表を取得してフィルタした JSON** を `docs/table/` に出力し、続けて **`browser_rows.json`**（表＋DB マージ）を生成してから Pages 公開できます。サイトの **`index.html`** がトップでそのデータを表形式表示します。詳細は [github-actions-songdata-table-filter.md](./github-actions-songdata-table-filter.md) を参照してください。
+`tools/table-filter/` を同梱し、`data/songdata.db` と `filter_config.json` を用意すると、push 時に **元表を取得してフィルタした JSON** を `docs/table/` に出力し、続けて **`browser_rows.json`**（表＋DB マージ）を生成してから Pages 公開できます。サイトの **`index.html`** がトップでそのデータを表形式表示します。
+
+- **あなたが触るファイル・設定:** [README.md](../README.md) の「手動で行う作業」
+- **Actions とスクリプトの裏側:** [github-actions-songdata-table-filter.md](./github-actions-songdata-table-filter.md)
 
 ## ローカルでのファイル配置のコツ
 

@@ -1,14 +1,10 @@
 # `data/songdata.db`
 
-beatoraja がローカルで生成する **`songdata.db`** を、このパスに置いてコミットするか、CI の前に配置してください。
+beatoraja がローカルで生成する **`songdata.db`** を、このパスに置いてコミットしてください。
 
-## 更新のしかた（ユーザー作業）
+## 手動での更新手順
 
-1. PC 上の beatoraja のデータフォルダから `songdata.db` をコピーする。
-2. 本リポジトリの `data/songdata.db` に上書きする。
-3. `git add data/songdata.db && git commit && git push` で更新する。
-
-GitHub の Web 画面から **Add file → Upload files** で置き換えても構いません。
+**差し替え・コミット・push・サイズの注意**など、運用上の手順はすべて **[リポジトリ直下の README.md](../README.md)** の「`songdata.db` を差し替える」に書いています。
 
 ## サイズが大きい場合
 
