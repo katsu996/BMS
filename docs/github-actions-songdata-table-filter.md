@@ -1,42 +1,51 @@
-# songdata.db と SQL で難易度表を絞り込み、GitHub Actions で公開する
+# songdata.db と SQL で難易度表を絞り込み、GitHub Actions で公開する（技術メモ）
+
+## 運用手順について
+
+**日々の手動作業**（`songdata.db` の差し替え、`filter_config.json` の SQL・URL 変更、Pages の初回設定、push、beatoraja の Table URL など）は、**リポジトリ直下の [README.md](../README.md)** にすべて集約しています。本文書は **CI・スクリプトの裏側**と設計上の注意に絞ります。
 
 ## 結論: GitHub Actions だけで実現できるか
 
-**はい。** 次の条件を満たせば、**GitHub Actions のみ**で「元表 JSON を取得 → `songdata.db` に SQL で問い合わせ → 交差でフィルタ → `docs/` に出力 → GitHub Pages で配信」まで完結できます。
+**はい。** 次を満たせば、ランナー上で「元表を取得 → `songdata.db` に SQL → ハッシュ交差でフィルタ → `docs/table/` に JSON 出力 → `docs/` 全体を GitHub Pages にデプロイ」まで完結します。
 
-1. **ワークフロー実行時に `songdata.db` がリポジトリに存在する**（通常は `git push` でコミットしておく）。
-2. **元難易度表のヘッダー JSON が HTTPS で取得できる**（`filter_config.json` の `source_header_url`）。データ本体はヘッダーの `data_url`（**相対パスのときはヘッダー URL から解決**）か、設定の `source_data_url` で上書き。
-3. **公開先のベース URL**が分かる（Actions では `SITE_BASE_URL` をワークフローが自動設定し、ヘッダーの `data_url` を書き換え）。
+1. 実行時に **`data/songdata.db`** がリポジトリに存在する（通常はコミット済み）。
+2. 元難易度表のヘッダーが **HTTPS で取得できる**（`filter_config.json` の `source_header_urls` または `source_header_url`）。データ本体は各ヘッダーの `data_url`（**相対パスはヘッダー URL 基準で解決**）または単一ソース時の `source_data_url`。
+3. 生成ヘッダーの `data_url` を書き換える **`SITE_BASE_URL`** が分かる（ワークフローが `https://<owner>.github.io/<repo>/table` を環境変数で渡す）。
 
-**GitHub が提供していないもの:** ブラウザだけで「手元の `songdata.db` を Actions に渡す」専用 UIはありません。**ユーザーが DB をリポジトリに載せて更新する**（push または Web のファイル追加）想定です。機密や巨大ファイルを載せない運用を推奨します。
+**GitHub が提供していないもの:** ブラウザだけで手元の DB を渡す専用 UIはありません。DB は **リポジトリに載せて更新する** 想定です。
 
-**複数の元表:** `source_header_urls` に URL を列挙すると、各表を同じ SQL でフィルタしたあと **譜面行を結合**（`md5` / `sha256` で重複除去）します。`course` は各ヘッダー由来の配列を連結します。公開用の合成ヘッダーは **先頭 URL のヘッダーをベース**にし、`data_url` だけ Pages 向けに差し替えます。
+## CI（`Deploy GitHub Pages`）で起きること
 
-## このリポジトリでの流れ
+ワークフローは [.github/workflows/pages.yml](../.github/workflows/pages.yml) です。`main` への push または手動 dispatch で実行されます。
 
-1. `data/songdata.db` を配置してコミット（更新時は上書きコミット）。
-2. `tools/table-filter/filter_config.json` で `source_header_url` と `sql_where` を設定する。`site_base_url` は空のままでよい（Actions が `SITE_BASE_URL` を渡す）。
-3. `main` へ push するか、Actions の **Run workflow** で手動実行する。
-4. **Deploy GitHub Pages** ジョブが `docs/` 全体（生成された `docs/table/*.json` を含む）を公開する。
-5. beatoraja の **Table URL** に  
-   `https://<owner>.github.io/<repo>/table/filtered_header.json`  
-   のような **`.json` で終わる URL** を登録する。
+| 順序 | 処理 | 入力 | 主な出力 |
+|------|------|------|----------|
+| 1 | `filter_table.py` | `tools/table-filter/filter_config.json`、`SITE_BASE_URL`（環境変数）、`data/songdata.db`（存在時） | `docs/table/filtered_data.json`、`filtered_header.json`（条件によりスキップ可） |
+| 2 | `build_pages_table.py` | 同上設定、`filtered_data.json`、`songdata.db` | `docs/table/browser_rows.json`（トップ `index.html` の表用） |
+| 3 | Pages アーティファクト | `docs/` ディレクトリ全体 | GitHub Pages にアップロード |
+
+- **`SITE_BASE_URL`:** `https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/table` が設定され、`filtered_header.json` 内の **`data_url`** が `${SITE_BASE_URL}/filtered_data.json` 形式に差し替わります。
+- **`filter_table.py` の終了コード 0:** 設定なし・`enabled: false`・ヘッダー URL 空・`songdata.db` 不在（`skip_if_no_songdata: true`）などでも **0 で終了**し、後段の `build_pages_table.py` が続きます。
+- **`build_pages_table.py`:** `filtered_data.json` が無い場合は **空の `browser_rows.json`**（理由を `meta` に記録）を書き、Pages デプロイは失敗させません。
+
+## `filter_table.py` のデータフロー（概要）
+
+1. **`sql_where`** を検証し、`SELECT DISTINCT md5, sha256 FROM song WHERE (<sql_where>)` で **許可ハッシュ集合**を得る。
+2. 各 **元ヘッダー**を取得（URL が `.html` のときは `<meta name="bmstable">` からヘッダー JSON URL を解決）。
+3. ヘッダーの **`data_url`** を取得（相対ならヘッダー URL に `urljoin`）。単一ソースかつ **`source_data_url`** があればそちらを優先。
+4. データ配列の各行について **`md5` / `sha256`** が許可集合に含まれる行だけ残す。
+5. **複数ヘッダー**のときは、通過行を **`md5` / `sha256` で重複除去**して 1 本のデータ配列にマージ。`course` は各ヘッダー由来を **配列として連結**。合成ヘッダーは **先頭ヘッダーをベース**にし、`data_url` だけ `SITE_BASE_URL` 上の `filtered_data.json` に差し替え。
 
 ## 例: Satellite Recommend（stellabms）
 
-[Satellite Recommend（`table_rec.html`）](https://stellabms.xyz/sl/table_rec.html) は `<meta name="bmstable" content="header_rec.json" />` により、同ディレクトリの **`header_rec.json`** をヘッダーとして読みます。本リポジトリの既定設定では次を指しています。
+[Satellite Recommend（`table_rec.html`）](https://stellabms.xyz/sl/table_rec.html) は `<meta name="bmstable" content="header_rec.json" />` により、同ディレクトリの **`header_rec.json`** をヘッダーとして読みます。既定では `source_header_urls` に SL / ST の `table_rec.html` が並んでいます。
 
-- ヘッダー: `https://stellabms.xyz/sl/header_rec.json`
-- データ: ヘッダー内の `data_url`（例: `score_rec.json`）を **ヘッダー URL から相対解決**（→ `https://stellabms.xyz/sl/score_rec.json`）
-
-**フィルタ後の行数が 0 になる場合:** `songdata.db` がローカルでスキャンした譜面の集合であり、**元表の `md5` / `sha256` と一致する行だけ**が残ります。さらに `sql_where`（例: **等速 BPM** `minbpm = maxbpm`、または変速 `minbpm != maxbpm`）で絞るため、**手元の DB に無い譜面**や **条件に合わない BPM 範囲の譜面**は落ちます。表を十分に埋めたい場合は **BMS フォルダを読み込ませたうえで `songdata.db` を更新・コミット**してください。
-
-**GitHub Pages のトップページ:** Actions は `filter_table.py` のあと `build_pages_table.py` を実行し、`docs/table/browser_rows.json`（難易度表の行＋`song` 列のマージ）を生成します。`docs/index.html` がこの JSON を読み込み、**表形式で一覧表示**します。
+**フィルタ後の行数が 0 に近い場合:** 元表のハッシュと **`songdata.db` の `song` に存在する行**の交差だけが残ります。さらに **`sql_where`** で BPM などを絞るため、**DB に無い譜面**や **条件不一致**は落ちます。表を埋めたい場合は **beatoraja で譜面を読み込んだうえで DB を更新**し、再度コミットしてください。
 
 ## 制限・注意
 
-- **フィルタ結果は「元表に載っている譜面」のみ**です。`songdata.db` にしか無い曲は難易度表には出ません（交差フィルタ）。
-- **段位コース（`course`）**は、譜面が落ちて要件を満たさなくなると **コース定義が壊れる**可能性があります。スクリプトは `charts` が空のコースを削除しますが、運用仕様は各自で確認してください。
+- **フィルタ結果は「元表に載っている譜面」のみ**です。`songdata.db` にしか無い曲は難易度表 JSON には出ません。
+- **段位コース（`course`）**は、譜面が落ちて要件を満たさなくなると **コース定義が壊れる**可能性があります。`charts` が空のノードは削除しますが、運用仕様は各自で確認してください。
 - **外部表の取得**はネットワーク依存です。相手サーバの障害・レート制限で失敗する場合があります。
 - **`sql_where` は信頼できる設定のみ**をコミットしてください（簡易的な禁止キーワードチェックのみ）。
 
@@ -45,10 +54,10 @@
 | ファイル | 説明 |
 |----------|------|
 | [tools/table-filter/filter_table.py](../tools/table-filter/filter_table.py) | フィルタ本体（Python 標準ライブラリのみ） |
-| [tools/table-filter/build_pages_table.py](../tools/table-filter/build_pages_table.py) | フィルタ結果と `song` をマージし `browser_rows.json` を生成（Pages トップの表用） |
+| [tools/table-filter/build_pages_table.py](../tools/table-filter/build_pages_table.py) | フィルタ結果と `song` をマージし `browser_rows.json` を生成 |
 | [tools/table-filter/filter_config.json](../tools/table-filter/filter_config.json) | 実際に読む設定（URL・SQL 等） |
-| [tools/table-filter/README.md](../tools/table-filter/README.md) | 設定項目の短い説明 |
-| [.github/workflows/pages.yml](../.github/workflows/pages.yml) | フィルタ実行後に Pages をデプロイ |
+| [tools/table-filter/README.md](../tools/table-filter/README.md) | CLI・設定キーの短い説明 |
+| [.github/workflows/pages.yml](../.github/workflows/pages.yml) | 上記スクリプト実行後に `docs/` を Pages へデプロイ |
 
 ## 参考（beatoraja 側）
 

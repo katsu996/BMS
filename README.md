@@ -1,34 +1,111 @@
 # test-CursorToSlack
 
-## ドキュメント
+beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Actions で絞り込み JSON を生成し、GitHub Pages で公開する実験用リポジトリです。
 
-- [beatoraja 楽曲データベース（BMS）仕様メモ](docs/bms-beatoraja-song-db.md) — `songdata.db` / `songinfo.db` のテーブル概要と更新挙動の整理
-- [条件付き BMS 仮想フォルダ生成ツール — 要件定義・調査](docs/requirements-filtered-bms-folder-tool.md)
-- [beatoraja `default.json` 断片例: `minbpm != maxbpm`](examples/beatoraja-default-json-snippet-changing-bpm.json)
-- [beatoraja と LR2oraja / Endless Dream の違い](docs/beatoraja-vs-lr2oraja-derivatives.md)
-- [beatoraja: 難易度表の URL 公開・追加と、条件で絞った表の再公開](docs/beatoraja-difficulty-table-url-and-filtered-publish.md)
-- [songdata.db × GitHub Actions で難易度表を絞り込む](docs/github-actions-songdata-table-filter.md)
+---
 
-## GitHub Pages と難易度表フィルタ
+## あなたが手動で行う作業（一覧）
 
-**GitHub Pages** に静的ファイルを載せる手順と、**`songdata.db` + SQL** で元難易度表を絞り込んだ JSON を **GitHub Actions** で生成して同じサイトに載せる仕組みです。
+以降の作業は、**GitHub の Web 画面**と**ローカル（または Codespace）のエディタ**、必要に応じて **git** で行います。自動で済む処理（Python やワークフロー）は [docs/github-actions-songdata-table-filter.md](docs/github-actions-songdata-table-filter.md) にまとめています。
 
-| 内容 | ドキュメント / パス |
-|------|----------------------|
-| Pages の詳細手順 | [docs/github-pages-publish-guide.md](docs/github-pages-publish-guide.md) |
-| Actions × songdata.db × 難易度表 | [docs/github-actions-songdata-table-filter.md](docs/github-actions-songdata-table-filter.md) |
-| フィルタ設定・ローカル実行 | [tools/table-filter/README.md](tools/table-filter/README.md) |
-| `songdata.db` の置き場所 | [data/README.md](data/README.md) |
-| ワークフロー | [.github/workflows/pages.yml](.github/workflows/pages.yml) |
-| 公開ルート | [docs/](docs/)（`.nojekyll` と `index.html`） |
+### 1. 初回のみ: GitHub Pages の公開元を「GitHub Actions」にする
 
-### クイックスタート
+1. リポジトリの **Settings → Pages**
+2. **Build and deployment** の **Source** で **GitHub Actions** を選ぶ
 
-1. **初回のみ**: GitHub の **Settings → Pages → Build and deployment** で **Source を「GitHub Actions」**にする（このリポジトリの `Deploy GitHub Pages` ワークフローがデプロイするため）。
-2. `data/songdata.db` をコミットする（Web の **Add file → Upload files** で `data/songdata.db` を上書きしてもよい。更新のたびに差し替え）。
-3. （任意）難易度表を Actions で絞り込む場合は、`tools/table-filter/filter_config.json` の `source_header_url` に元表のヘッダー JSON の URL を書く。空のままならフィルタはスキップされ、`docs/` の静的ファイルだけが公開される。
-4. `main` に push（または **Actions → Deploy GitHub Pages → Run workflow**）→ 成功後、**Settings → Pages** に表示されるサイト URL で **トップページに難易度表の一覧表**（`index.html`）が開きます。
+これをしないと `.github/workflows/pages.yml` のデプロイがサイトに反映されません。
 
-beatoraja の Table URL には `https://<owner>.github.io/<repo>/table/filtered_header.json` を登録します。
+### 2. `songdata.db` を差し替える（更新のたび）
 
-別リポジトリでは、**Settings → Pages → Source: GitHub Actions** を選び、上記のワークフローと `docs/`・`tools/table-filter/` などをコピーすれば同様に公開できます。
+1. PC の beatoraja データフォルダから **`songdata.db`** をコピーする
+2. 本リポジトリの **`data/songdata.db`** に上書きする（パスをずらさない）
+3. 変更をリポジトリに載せる  
+   - **Git**: `git add data/songdata.db` → `git commit` → `git push`  
+   - **GitHub Web**: **Add file → Upload files** で `data/songdata.db` を置き換えてコミット
+
+**補足:** `songdata.db` は **Pages のサイト上には出ません**。Actions のランナー上でフィルタにだけ使われます。ファイルが大きい場合は [data/README.md](data/README.md) の注意も読んでください。
+
+### 3. フィルタ用 SQL（`sql_where`）を変える
+
+1. **`tools/table-filter/filter_config.json`** を開く
+2. **`sql_where`** を編集する（`song` テーブルにそのまま `WHERE (...)` の括弧内として連結されます）
+
+例:
+
+- **等速 BPM（min と max が同じ）:**  
+  `minbpm IS NOT NULL AND maxbpm IS NOT NULL AND minbpm = maxbpm`
+- **変速 BPM（min と max が異なる）:**  
+  `minbpm IS NOT NULL AND maxbpm IS NOT NULL AND minbpm != maxbpm`
+
+**NULL 行:** `minbpm` / `maxbpm` が NULL の譜面は上記のように `IS NOT NULL` を付けないと条件に入らないことがあります。
+
+**セキュリティ:** スクリプトは `;` や `ATTACH` など一部パターンを拒否しますが、**信頼できる内容だけ**をコミットしてください。
+
+### 4. 元難易度表の URL を変える・足す
+
+1. 同じく **`tools/table-filter/filter_config.json`** の **`source_header_urls`**（配列）を編集する  
+2. 各要素は次のどちらでも可です。  
+   - **ヘッダー JSON の HTTPS URL**（例: `https://example.com/header.json`）  
+   - **難易度表の HTML の URL**（`<meta name="bmstable" content="...">` からヘッダー JSON を自動解決）
+
+**1 本だけ指定する場合:** `source_header_urls` を空配列 `[]` にし、**`source_header_url`** に文字列で 1 本書いても動きます（後方互換）。
+
+**単一ソース時のみ:** **`source_data_url`** にデータ JSON の URL を書くと、ヘッダー内の `data_url` の代わりに使われます。**複数ヘッダー**（`source_header_urls` が 2 件以上）のときは **各ヘッダーの `data_url` のみ**が使われ、`source_data_url` は無視されます（警告が出ます）。
+
+### 5. フィルタそのものをオフにしたい・難易度表取得を止めたい
+
+次のいずれかで、**外部表の取得と `docs/table/` への生成**はスキップされます（Pages の `docs/` 静的ファイルのデプロイは続きます）。
+
+- **`enabled`** を `false` にする  
+- **`source_header_urls`** を `[]` にし、**`source_header_url`** も空にする  
+
+この場合、`filter_table.py` は何も出力せず、その後の **`build_pages_table.py`** は空の **`browser_rows.json`** を出します（トップの表は空になります）。
+
+### 6. `songdata.db` が無いときの挙動を変えたい
+
+- **`skip_if_no_songdata`: `true`（既定）** — `data/songdata.db` が無いとフィルタはスキップ（エラーにしない）  
+- **`false`** — DB が無いと **Actions が失敗**します（厳格にしたいとき）
+
+### 7. 変更を GitHub に反映する（デプロイのトリガー）
+
+- **`main` へ push** する  
+  または  
+- **Actions → Deploy GitHub Pages → Run workflow**（手動実行）
+
+成功したら **Settings → Pages** に表示される **サイト URL** で `index.html` が開きます。
+
+### 8. beatoraja に「絞り込み後の難易度表」を登録する
+
+**Table URL**（設定 → リソース）に、次のような **`.json` で終わる HTTPS URL** を追加し、**難易度表読み込み**を実行します。
+
+`https://<あなたのユーザー名>.github.io/<リポジトリ名>/table/filtered_header.json`
+
+（`<owner>` と `<repo>` は実際の値に置き換えてください。）
+
+### 9. 結果がおかしいときに手動で確認すること
+
+- **Actions が赤い:** ログで `filter_table.py`（外部 URL 取得・SQL）のエラーを確認する  
+- **表の行が 0 件:**  
+  - 元表の `md5` / `sha256` と **`songdata.db` の `song` に存在する行**の交差だけが残るため、**DB を更新していない譜面**は落ちます  
+  - **`sql_where`** に合わない BPM の譜面も落ちます  
+- **トップの表が空:** 上記の「フィルタスキップ」や `filtered_data.json` 未生成の状態で `browser_rows.json` が空になっている可能性があります
+
+---
+
+## ドキュメント（仕様・裏側の処理）
+
+手動チェックリスト以外の説明（DB 仕様、Actions のデータフロー、仮想フォルダ要件など）は **`docs/`** にあります。
+
+| 内容 | パス |
+|------|------|
+| beatoraja 楽曲 DB（`songdata.db` / `songinfo.db`）の整理 | [docs/bms-beatoraja-song-db.md](docs/bms-beatoraja-song-db.md) |
+| 条件付き仮想フォルダ（`folder/default.json`）の要件・調査 | [docs/requirements-filtered-bms-folder-tool.md](docs/requirements-filtered-bms-folder-tool.md) |
+| `default.json` 断片の例（`minbpm != maxbpm`） | [examples/beatoraja-default-json-snippet-changing-bpm.json](examples/beatoraja-default-json-snippet-changing-bpm.json) |
+| beatoraja と LR2oraja / Endless Dream の違い | [docs/beatoraja-vs-lr2oraja-derivatives.md](docs/beatoraja-vs-lr2oraja-derivatives.md) |
+| 難易度表の URL 公開・自作表の考え方 | [docs/beatoraja-difficulty-table-url-and-filtered-publish.md](docs/beatoraja-difficulty-table-url-and-filtered-publish.md) |
+| GitHub Pages の仕組み・別リポジトリへのコピー手順 | [docs/github-pages-publish-guide.md](docs/github-pages-publish-guide.md) |
+| **Actions・Python スクリプトの処理内容**（フィルタ、マージ、制限） | [docs/github-actions-songdata-table-filter.md](docs/github-actions-songdata-table-filter.md) |
+| `docs/` ディレクトリの役割（公開ルート） | [docs/README.md](docs/README.md) |
+| フィルタの CLI・設定キーの開発者向けメモ | [tools/table-filter/README.md](tools/table-filter/README.md) |
+
+ワークフロー定義: [.github/workflows/pages.yml](.github/workflows/pages.yml)
