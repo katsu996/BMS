@@ -1,6 +1,6 @@
 // pages_ui_config.json（JSONC 風）
 // `tools/table-filter/build_pages_table.py` が読み込むとき、`//` 行コメントと `/* */` を除去してから JSON として解釈します。
-// キーの並びは GitHub Pages トップの表（`docs/index.html`）の左から右の列順に合わせています。
+// キーの並びは GitHub Pages トップの表（`docs/index.html`）の左から右の列順に合わせています（DB の右に IR 3 列、その右に Chart）。
 {
   "version": 1,
   "column_widths": {
@@ -75,6 +75,10 @@
     // "d:adddate": "11ch",
     // "d:favorite": "8ch",
     // "d:charthash": "14ch",
+    // --- IR 列（Chart の左・3 列）---
+    "ir:lr2ir": "4.5rem",
+    "ir:minir": "4.5rem",
+    "ir:mocha": "4.5rem",
     // --- Chart 列（右端）---
     "chart": "4.5rem"
   },
