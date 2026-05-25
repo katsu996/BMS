@@ -215,6 +215,33 @@
     return k === "title" || k === "note";
   }
 
+  /** 難易度表行の MD5 / SHA256 から各 IR サイトへのリンク（Chart の左の 3 列） */
+  function irCellsHtml(table) {
+    var md5 = table && table.md5 != null ? String(table.md5).trim().toLowerCase() : "";
+    var sha = table && table.sha256 != null ? String(table.sha256).trim().toLowerCase() : "";
+    var md5ok = /^[0-9a-f]{32}$/.test(md5);
+    var shaok = /^[0-9a-f]{64}$/.test(sha);
+    var lr2 =
+      md5ok
+        ? '<td class="ir-cell"><a href="' +
+          esc("http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&bmsmd5=" + md5) +
+          '" rel="noopener noreferrer">LR2IR</a></td>'
+        : '<td class="empty">—</td>';
+    var mini =
+      shaok
+        ? '<td class="ir-cell"><a href="' +
+          esc("https://www.gaftalk.com/minir/#/viewer/song/" + sha + "/0") +
+          '" rel="noopener noreferrer">MinIR</a></td>'
+        : '<td class="empty">—</td>';
+    var mocha =
+      shaok
+        ? '<td class="ir-cell"><a href="' +
+          esc("https://mocha-repository.info/song.php?sha256=" + sha) +
+          '" rel="noopener noreferrer">Mocha</a></td>'
+        : '<td class="empty">—</td>';
+    return lr2 + mini + mocha;
+  }
+
   /** 難易度表行の MD5 から bms-score-viewer へのリンク（表の右端列） */
   function chartCellHtml(table) {
     var m = table && table.md5 != null ? String(table.md5).trim().toLowerCase() : "";
@@ -333,6 +360,7 @@
         if (vDKeys.length) {
           for (ti = 0; ti < vDKeys.length; ti++) keys.push("d:" + vDKeys[ti]);
         } else keys.push("d:_empty");
+        keys.push("ir:lr2ir", "ir:minir", "ir:mocha");
         keys.push("chart");
         return keys;
       }
@@ -358,7 +386,14 @@
             } else if (ck.indexOf("t:") === 0) {
               var rk = ck.slice(2);
               if (rk !== "_empty" && isTableClampKey(rk)) col.style.width = "50ch";
-            } else if (ck === "chart") col.style.width = "4.5rem";
+            } else if (
+              ck === "ir:lr2ir" ||
+              ck === "ir:minir" ||
+              ck === "ir:mocha" ||
+              ck === "chart"
+            ) {
+              col.style.width = "4.5rem";
+            }
           }
           col.setAttribute("data-col-key", ck);
           cg.appendChild(col);
@@ -557,6 +592,11 @@
         thD.className = "group-d";
         thD.textContent = "songdata.db（song）の列";
         trh1.appendChild(thD);
+        var thIr = document.createElement("th");
+        thIr.colSpan = 3;
+        thIr.className = "group-ir";
+        thIr.textContent = "IR";
+        trh1.appendChild(thIr);
         var thChart = document.createElement("th");
         thChart.colSpan = 1;
         thChart.className = "group-chart";
@@ -589,6 +629,12 @@
           th1.textContent = "（DB列なし）";
           trh2.appendChild(th1);
         }
+        ["LR2IR", "MinIR", "Mocha"].forEach(function (lbl) {
+          var thi = document.createElement("th");
+          thi.className = "group-ir";
+          thi.textContent = lbl;
+          trh2.appendChild(thi);
+        });
         var thChart2 = document.createElement("th");
         thChart2.className = "group-chart";
         thChart2.textContent = "Chart";
@@ -644,6 +690,14 @@
         var m = t.md5 != null ? String(t.md5).trim().toLowerCase() : "";
         if (/^[0-9a-f]{32}$/.test(m)) {
           parts.push("https://bms-score-viewer.pages.dev/view?md5=" + m);
+          parts.push(
+            "http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&bmsmd5=" + m
+          );
+        }
+        var sh = t.sha256 != null ? String(t.sha256).trim().toLowerCase() : "";
+        if (/^[0-9a-f]{64}$/.test(sh)) {
+          parts.push("https://www.gaftalk.com/minir/#/viewer/song/" + sh + "/0");
+          parts.push("https://mocha-repository.info/song.php?sha256=" + sh);
         }
         return parts.join(" ") + " " + JSON.stringify(t) + " " + JSON.stringify(d);
       }
@@ -700,6 +754,7 @@
             tr.insertAdjacentHTML("beforeend", cellHtml(d ? d[k] : "", "db", k));
           });
           if (!vDKeys.length) tr.insertAdjacentHTML("beforeend", "<td class=\"empty\">—</td>");
+          tr.insertAdjacentHTML("beforeend", irCellsHtml(t));
           tr.insertAdjacentHTML("beforeend", chartCellHtml(t));
           tbody.appendChild(tr);
         });
