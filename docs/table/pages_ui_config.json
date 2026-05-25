@@ -6,12 +6,48 @@
     "chart": "4.5rem"
   },
   "column_visible_defaults": {
-    "table": {},
+    "table": {
+      "id": false,
+      "source_table_index": false,
+      "source_table_names": false,
+      "path": false,
+      "preview": false,
+      "banner": false,
+      "stagefile": false,
+      "backbmp": false,
+      "tag": false,
+      "parent": false,
+      "mode": false,
+      "judge": false,
+      "feature": false,
+      "content": false,
+      "favorite": false,
+      "adddate": false,
+      "url": false,
+      "url_diff": false,
+      "source_header_json_url": false,
+      "source_table_register_url": false,
+      "folder": false
+    },
     "db": {
       "title": false,
       "artist": false,
       "md5": false,
-      "sha256": false
+      "sha256": false,
+      "path": false,
+      "preview": false,
+      "banner": false,
+      "stagefile": false,
+      "backbmp": false,
+      "tag": false,
+      "parent": false,
+      "mode": false,
+      "judge": false,
+      "feature": false,
+      "content": false,
+      "favorite": false,
+      "adddate": false,
+      "folder": false
     }
   }
 }
