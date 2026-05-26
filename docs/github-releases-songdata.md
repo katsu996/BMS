@@ -63,6 +63,39 @@ gh release upload songdata-2026-05-26 data/songdata.db --repo OWNER/REPO --clobb
 
 リポジトリでは **`upload-songdata-github-release.secrets.txt`** と **`upload-songdata-github-release.local.ps1`** は **`.gitignore`** 済みです。
 
+### `secrets.txt` の書き方（詳細・手順）
+
+サンプル **`scripts/upload-songdata-github-release.secrets.txt.example`** には、ダミーの **`ghp_REPLACE_ME`** と **`owner/repo`** が書いてあります。ここでいう「1 行目にトークンを書く」とは、**そのダミー文字列を消して、代わりにあなたが GitHub で発行した本物のトークンだけを 1 行目に置く**という意味です。
+
+| やること | 説明 |
+|----------|------|
+| **置き場所** | **`upload-songdata-github-release.ps1` と同じフォルダ**に、`upload-songdata-github-release.secrets.txt` という名前で保存する（名前の typo に注意）。 |
+| **1 行目** | **プレースホルダを残さない。** `ghp_REPLACE_ME` という文字列ごと削除し、その行に **GitHub が一度だけ表示する PAT** を貼り付ける。前後にスペースや全角スペースを付けない。 |
+| **2 行目** | アップロード先の **`ユーザー名または組織名/リポジトリ名`**（例: `katsu996/test-CursorToSlack`）。`owner/repo` は例なので、**必ず自分のリポジトリに書き換える**。 |
+| **コメント行** | `#` で始まる行は無視される。トークン行の先頭に `#` を付けない。 |
+| **引用符** | 通常は不要。付けるなら **`'ghp_...'`** のように **一重だけ**（スクリプトが外側の引用符を 1 組は剥がす）。 |
+| **`KEY=value` 形式** | 次の形式も 1・2 行目で使える: `GITHUB_TOKEN=...` / `GH_TOKEN=...`、リポジトリは `GITHUB_REPOSITORY=owner/repo` または `REPO=owner/repo`。 |
+| **文字コード** | **UTF-8** で保存（メモ帳なら「名前を付けて保存」→ **文字コード: UTF-8**。**UTF-16（Unicode）** だとトークンが壊れ **401** になりやすい）。 |
+
+**「`ghp_REPLACE_ME` を消してトークンを書く」＝「`ghp_REPLACE_ME` という文字列はファイルに残さず、そこに本物のトークンを上書きする」**で合っています。`ghp_REPLACE_ME` の **`REPLACE_ME` だけ**を消して **`ghp_` に自分のトークンの続きを足す**、のような編集はしないでください（無効なトークンになります）。
+
+#### トークン（PAT）の作り方（GitHub 上）
+
+1. GitHub にログインし、右上の自分のアイコン → **Settings**（個人アカウントの設定）。
+2. 左メニュー一番下付近 → **Developer settings** → **Personal access tokens**。
+3. **Fine-grained tokens** または **Tokens (classic)** のどちらかで **Generate**。
+4. 権限の目安:
+   - **Classic（プライベートリポジトリ）:** **`repo`** にチェック。
+   - **Classic（パブリックのみ）:** 多くの場合 **`public_repo`** で足りることがあります（足りない場合は `repo` を検討）。
+   - **Fine-grained:** 対象リポジトリを選び、**Repository permissions → Contents を Read and write**（メタデータ読み取りは通常デフォルトで可）。
+5. 生成直後に表示されるトークンを **コピー**し、**すぐ** `secrets.txt` の **1 行目**に貼り付けて保存（あとから GitHub の画面では全文は再表示されません）。
+6. **組織のリポジトリ**で SAML SSO を使っている場合: トークン一覧からそのトークンの **Configure SSO** で組織を **Authorize** しないと **401** になることがあります。
+
+#### 動作確認の目安
+
+- バッチ実行直後に **`API target repository: あなたのowner/あなたのrepo`** と出る。ここが意図と違うなら **2 行目**を修正。
+- **`401 Unauthorized`** のときは、**トークンが無効・期限切れ・権限不足・UTF-16 保存・プレースホルダのまま**などが多いです。上表と PAT 権限を再確認してください。
+
 ### タグ名
 
 - **引数を省略**した場合、タグは自動で **`songdata-YYYY-MM-DD`**（実行日の日付）になります。

@@ -63,21 +63,83 @@ $ErrorActionPreference = "Stop"
 $secretsTxt = Join-Path $PSScriptRoot "upload-songdata-github-release.secrets.txt"
 $localCfg = Join-Path $PSScriptRoot "upload-songdata-github-release.local.ps1"
 
+function Unwrap-QuotedToken {
+    param([string] $Text)
+    $s = $Text.Trim()
+    if ($s.Length -ge 2) {
+        $fc = $s[0]
+        $lc = $s[$s.Length - 1]
+        if (($fc -eq '"' -and $lc -eq '"') -or ($fc -eq "'" -and $lc -eq "'")) {
+            $s = $s.Substring(1, $s.Length - 2).Trim()
+        }
+    }
+    return $s
+}
+
+function Normalize-PatLine {
+    param([string] $Line)
+    $s = $Line.Trim().TrimStart([char]0xFEFF)
+    if ($s -match '^(?:GITHUB_TOKEN|GH_TOKEN)\s*=\s*(.+)$') {
+        $s = $matches[1].Trim()
+    }
+    return (Unwrap-QuotedToken -Text $s)
+}
+
+function Normalize-RepoLine {
+    param([string] $Line)
+    $s = $Line.Trim().TrimStart([char]0xFEFF)
+    if ($s -match '^(?:GITHUB_REPOSITORY|REPO)\s*=\s*(.+)$') {
+        $s = $matches[1].Trim()
+    }
+    return (Unwrap-QuotedToken -Text $s)
+}
+
 function Import-SecretsTxtFile {
     param([string] $Path)
     if (-not (Test-Path -LiteralPath $Path)) {
         return
     }
-    $lines = @(
-        Get-Content -LiteralPath $Path -Encoding UTF8 |
-        ForEach-Object { $_.Trim() } |
-        Where-Object { $_ -and -not $_.StartsWith("#") }
-    )
+    # UTF-8 with or without BOM (avoid CMD/Notepad oddities vs Get-Content defaults).
+    $enc = New-Object System.Text.UTF8Encoding $false
+    $rawLines = [System.IO.File]::ReadAllLines($Path, $enc)
+    $lines = New-Object System.Collections.Generic.List[string]
+    foreach ($line in $rawLines) {
+        $t = $line.Trim()
+        if (-not $t) { continue }
+        if ($t.StartsWith("#")) { continue }
+        [void]$lines.Add($t)
+    }
     if ($lines.Count -ge 1) {
-        $env:GITHUB_TOKEN = $lines[0]
+        $env:GITHUB_TOKEN = (Normalize-PatLine -Line $lines[0])
     }
     if ($lines.Count -ge 2) {
-        $env:GITHUB_REPOSITORY = $lines[1]
+        $env:GITHUB_REPOSITORY = (Normalize-RepoLine -Line $lines[1])
+    }
+}
+
+function Assert-NoPlaceholderToken {
+    param([string] $Token)
+    if (-not $Token) {
+        return
+    }
+    $lower = $Token.ToLowerInvariant()
+    if ($lower -match 'replace_me|^ghp_replace|^github_pat_replace|changeme|paste_your|pasteyour') {
+        throw @"
+Token in secrets file still looks like a placeholder or example text.
+
+Line 1 must be your REAL Personal Access Token only:
+  - Remove ALL of the sample text (for example delete the entire string ghp_REPLACE_ME).
+  - Paste the token GitHub shows you ONCE when you create it (you cannot view it again later).
+  - Do not add quotes, spaces, or words like token= unless you use GITHUB_TOKEN=... form.
+
+See docs/github-releases-songdata.md section "secrets.txt の書き方（詳細）".
+"@
+    }
+    if ($Token.Length -lt 20) {
+        throw "Token is too short ($($Token.Length) chars). Check line 1 of upload-songdata-github-release.secrets.txt for a truncated paste."
+    }
+    if ($Token -notmatch '^(gh[ps]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)') {
+        Write-Warning "Token does not start with ghp_/ghs_/github_pat_. If GitHub returns 401, verify the full PAT was pasted on line 1."
     }
 }
 
@@ -98,6 +160,7 @@ $apiVersion = "2022-11-28"
 function Get-RepoToken {
     param([string] $CmdLineToken)
     if ($CmdLineToken) {
+        Assert-NoPlaceholderToken -Token $CmdLineToken
         return $CmdLineToken
     }
     $t = $env:GITHUB_TOKEN
@@ -118,6 +181,7 @@ Or set environment variable GITHUB_TOKEN / GH_TOKEN before running.
 "@
         throw $msg.Trim()
     }
+    Assert-NoPlaceholderToken -Token $t
     return $t
 }
 
@@ -140,12 +204,41 @@ function Get-UploadHeaders {
     }
 }
 
+function Format-GitHubAuthHelp {
+    return @"
+GitHub returned 401 Unauthorized. Common causes:
+
+  1) Line 1 of upload-songdata-github-release.secrets.txt is wrong
+     - Replace the ENTIRE placeholder (e.g. ghp_REPLACE_ME) with your real PAT.
+     - One line, no spaces before/after, no smart quotes. UTF-8 recommended.
+
+  2) PAT permissions
+     - Classic: private repo -> scope 'repo'. Public-only -> 'public_repo'.
+     - Fine-grained: Repository access includes THIS repo; permission 'Contents' = Read and write.
+
+  3) Expired / revoked token -> create a new PAT at GitHub Settings -> Developer settings.
+
+  4) Organization with SAML SSO -> open the token on GitHub and click "Configure SSO" / Authorize for that org.
+
+See docs/github-releases-songdata.md (secrets.txt section).
+"@
+}
+
 function Invoke-GitHubGet {
     param(
         [string] $Uri,
         [hashtable] $Headers
     )
-    return Invoke-RestMethod -Uri $Uri -Headers $Headers -Method Get
+    try {
+        return Invoke-RestMethod -Uri $Uri -Headers $Headers -Method Get
+    }
+    catch {
+        $resp = $_.Exception.Response
+        if ($null -ne $resp -and [int]$resp.StatusCode -eq 401) {
+            throw ((Format-GitHubAuthHelp) + "`n`nRequest: GET $Uri`nOriginal: $($_.Exception.Message)")
+        }
+        throw
+    }
 }
 
 function Invoke-GitHubPostJson {
@@ -155,7 +248,16 @@ function Invoke-GitHubPostJson {
         [hashtable] $Body
     )
     $json = $Body | ConvertTo-Json -Compress
-    return Invoke-RestMethod -Uri $Uri -Headers $Headers -Method Post -Body $json -ContentType "application/json; charset=utf-8"
+    try {
+        return Invoke-RestMethod -Uri $Uri -Headers $Headers -Method Post -Body $json -ContentType "application/json; charset=utf-8"
+    }
+    catch {
+        $resp = $_.Exception.Response
+        if ($null -ne $resp -and [int]$resp.StatusCode -eq 401) {
+            throw ((Format-GitHubAuthHelp) + "`n`nRequest: POST $Uri`nOriginal: $($_.Exception.Message)")
+        }
+        throw
+    }
 }
 
 function Invoke-GitHubDelete {
@@ -163,7 +265,16 @@ function Invoke-GitHubDelete {
         [string] $Uri,
         [hashtable] $Headers
     )
-    Invoke-RestMethod -Uri $Uri -Headers $Headers -Method Delete | Out-Null
+    try {
+        Invoke-RestMethod -Uri $Uri -Headers $Headers -Method Delete | Out-Null
+    }
+    catch {
+        $resp = $_.Exception.Response
+        if ($null -ne $resp -and [int]$resp.StatusCode -eq 401) {
+            throw ((Format-GitHubAuthHelp) + "`n`nRequest: DELETE $Uri`nOriginal: $($_.Exception.Message)")
+        }
+        throw
+    }
 }
 
 function Get-ReleaseByTag {
@@ -254,7 +365,16 @@ function Send-ReleaseAsset {
         [string] $Token
     )
     $uh = Get-UploadHeaders -Token $Token
-    Invoke-RestMethod -Uri $UploadUri -Headers $uh -Method Post -InFile $FilePath | Out-Null
+    try {
+        Invoke-RestMethod -Uri $UploadUri -Headers $uh -Method Post -InFile $FilePath | Out-Null
+    }
+    catch {
+        $resp = $_.Exception.Response
+        if ($null -ne $resp -and [int]$resp.StatusCode -eq 401) {
+            throw ((Format-GitHubAuthHelp) + "`n`nRequest: POST (upload asset) $UploadUri`nOriginal: $($_.Exception.Message)")
+        }
+        throw
+    }
 }
 
 # --- main ---
@@ -282,6 +402,7 @@ if ($parts.Length -ne 2 -or -not $parts[0] -or -not $parts[1]) {
 }
 $owner = $parts[0]
 $name = $parts[1]
+Write-Host "API target repository: $owner/$name"
 
 if (-not $SongdataPath) {
     $nextToScript = Join-Path $PSScriptRoot $AssetName

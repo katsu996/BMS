@@ -20,7 +20,7 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
 本リポジトリでは **`songdata.db` は Git に含めません**（サイズ制限の回避）。**GitHub Releases のアセット**として公開し、必要なら Actions 用の変数で取得します。
 
 1. **Release へアップロード**（いずれか）
-   - **Windows（推奨）:** `songdata.db` があるフォルダに、`scripts/upload-songdata-github-release.bat` と同梱の `.ps1` をコピーし、**同じフォルダ**に認証用の **`upload-songdata-github-release.secrets.txt`**（例は `scripts/upload-songdata-github-release.secrets.txt.example`）を置いてから `.bat` をダブルクリックまたは実行します。タグは省略すると **`songdata-当日日付`** が自動で使われます。詳細は [docs/github-releases-songdata.md](docs/github-releases-songdata.md)。
+   - **Windows（推奨）:** `songdata.db` があるフォルダに、`scripts/upload-songdata-github-release.bat` と同梱の `.ps1` をコピーし、**同じフォルダ**に認証用の **`upload-songdata-github-release.secrets.txt`**（例は `scripts/upload-songdata-github-release.secrets.txt.example`）を置いてから `.bat` をダブルクリックまたは実行します。タグは省略すると **`songdata-当日日付`** が自動で使われます。**`ghp_REPLACE_ME` はダミーなので削除し、1 行目を本物の PAT に置き換える**必要があります（メモ帳は UTF-8 で保存）。具体手順は [docs/github-releases-songdata.md](docs/github-releases-songdata.md) の **`secrets.txt` の書き方（詳細・手順）** を参照してください。
    - **GitHub CLI:** 同ドキュメントの `gh release create` / `gh release upload` の例
 2. **GitHub Actions** でフィルタに使うタグ名を、リポジトリ変数 **`SONGDATA_RELEASE_TAG`** に設定する（**Settings → Secrets and variables → Actions → Variables**）。アップロード時にコンソールへ表示されるタグと揃えてください。`.github/workflows/pages.yml` がチェックアウト直後にその Release から `data/songdata.db` を取得します。
 
