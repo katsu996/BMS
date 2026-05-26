@@ -17,12 +17,12 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
 
 ### 2. `songdata.db` を更新して配布する（更新のたび）
 
-本リポジトリでは **`songdata.db` は Git に含めません**（サイズ制限の回避）。**GitHub Releases のアセット**として公開し、必要なら Actions 用の変数で取得します。
+本リポジトリでは **`songdata.db` は Git に含めません**（サイズ制限の回避）。**GitHub Releases のアセット**として公開し、**GitHub Actions** は **同一リポジトリの「Latest」Release** から **`songdata.db`** を毎回ダウンロードします（リポジトリ変数は不要）。
 
 1. **Release へアップロード**（いずれか）
    - **Windows（推奨）:** `songdata.db` があるフォルダに、`scripts/upload-songdata-github-release.bat` と同梱の `.ps1` をコピーし、**同じフォルダ**に認証用の **`upload-songdata-github-release.secrets.txt`**（例は `scripts/upload-songdata-github-release.secrets.txt.example`）を置いてから `.bat` をダブルクリックまたは実行します。タグは省略すると **`songdata-当日日付`** が自動で使われます。**`ghp_REPLACE_ME` はダミーなので削除し、1 行目を本物の PAT に置き換える**必要があります（メモ帳は UTF-8 で保存）。具体手順は [docs/github-releases-songdata.md](docs/github-releases-songdata.md) の **`secrets.txt` の書き方（詳細・手順）** を参照してください。
    - **GitHub CLI:** 同ドキュメントの `gh release create` / `gh release upload` の例
-2. **GitHub Actions** でフィルタに使うタグ名を、リポジトリ変数 **`SONGDATA_RELEASE_TAG`** に設定する（**Settings → Secrets and variables → Actions → Variables**）。アップロード時にコンソールへ表示されるタグと揃えてください。`.github/workflows/pages.yml` がチェックアウト直後にその Release から `data/songdata.db` を取得します。
+2. **Actions が取りに行く Release:** 新しい `songdata.db` を載せた Release は、**ドラフトでなくプレリリースでもない**通常の Release として公開し、必要なら GitHub 上で **「Latest」** になるようにしてください（通常は最新の非プレリリースが Latest になります）。**アセット名は `songdata.db`** にしてください。取得に失敗したりファイルが空だと **ワークフローはエラー**で止まります。
 
 ローカルでリポジトリの `tools/table-filter` を動かすだけなら、従来どおり **`data/songdata.db`** にファイルを置けば足ります（Release アップロードは不要な場合もあります）。
 
@@ -97,7 +97,7 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
 
 - **`skip_if_no_songdata`: `true`（既定）** — **ローカル**では `data/songdata.db` が無いとフィルタはスキップ（エラーにしない）  
 - **`false`** — DB が無いと **終了コード 1**（厳格）  
-- **GitHub Actions:** 生成物の JSON は `.gitignore` のため、DB 無しでスキップすると **空の表がデプロイ**されます。そのため **`GITHUB_ACTIONS=true` のときは**（意図的に続行したい場合を除き）**`songdata.db` が無いとエラー**になります。通常はリポジトリ変数 **`SONGDATA_RELEASE_TAG`** を、アップロードした Release のタグに合わせてください。どうしても DB 無しでワークフローを通したい場合のみ、`.github/workflows/pages.yml` の該当ジョブに環境変数 **`FILTER_CI_ALLOW_MISSING_SONGDATA=1`** を追加します（[docs/github-releases-songdata.md](docs/github-releases-songdata.md) も参照）。
+- **GitHub Actions:** 生成物の JSON は `.gitignore` のため、DB 無しでスキップすると **空の表がデプロイ**されます。そのため **`GITHUB_ACTIONS=true` のときは**（意図的に続行したい場合を除き）**`songdata.db` が無いとエラー**になります。通常は **Latest Release に `songdata.db` アセットがある状態**を保ってください（`.github/workflows/pages.yml` がチェックアウト直後に取得します）。どうしても DB 無しでワークフローを通したい場合のみ、`.github/workflows/pages.yml` の `build` ジョブに環境変数 **`FILTER_CI_ALLOW_MISSING_SONGDATA=1`** を追加します（[docs/github-releases-songdata.md](docs/github-releases-songdata.md) も参照）。
 
 ### 7. 変更を GitHub に反映する（デプロイのトリガー）
 

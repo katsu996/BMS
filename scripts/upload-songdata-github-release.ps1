@@ -14,7 +14,7 @@
   4) -Token / -Repo
 
 .PARAMETER Tag
-  Release tag. If empty: songdata-<today yyyy-MM-dd>. Match SONGDATA_RELEASE_TAG in Actions.
+  Release tag. If empty: songdata-<today yyyy-MM-dd>. CI downloads songdata.db from the repo's latest GitHub Release.
 
 .PARAMETER Repo
   owner/repo. Default: env GITHUB_REPOSITORY.
@@ -476,4 +476,4 @@ Send-ReleaseAsset -UploadUri $uploadUri -FilePath $SongdataPath -Token $token
 
 $dl = "https://github.com/$owner/$name/releases/download/$Tag/$AssetName"
 Write-Host "Done. Public download URL example: $dl"
-Write-Host "If Actions uses this file, set repository variable SONGDATA_RELEASE_TAG to: $Tag"
+Write-Host "CI (pages.yml) downloads songdata.db from the latest GitHub Release; this upload used tag: $Tag"

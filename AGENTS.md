@@ -60,6 +60,6 @@ cd tools/table-filter && python3 -m unittest discover -s tests -v
 
 ### Notes
 
-- `data/songdata.db` は **Git 管理外**（`.gitignore`）。ローカルでは beatoraja からコピーするか Release から取得。ユニットテストは DB 不要。CI ではリポジトリ変数 **`SONGDATA_RELEASE_TAG`** により Release から取得（[docs/github-releases-songdata.md](docs/github-releases-songdata.md)）。
+- `data/songdata.db` は **Git 管理外**（`.gitignore`）。ローカルでは beatoraja からコピーするか Release から取得。ユニットテストは DB 不要。CI では **同一リポジトリの Latest GitHub Release** から `gh release download` で取得（失敗・空ファイルはエラー）（[docs/github-releases-songdata.md](docs/github-releases-songdata.md)）。
 - Python スクリプト（`tools/table-filter/*.py` の本処理）は標準ライブラリのみ使用。`pip install` は不要（CI の ruff のみ）。
 - 生成されるファイル（`docs/table/*.json`）は `.gitignore` に入っていないため、テスト後に `git checkout -- docs/table/` でクリーンアップする。

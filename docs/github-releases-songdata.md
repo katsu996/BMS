@@ -99,7 +99,7 @@ gh release upload songdata-2026-05-26 data/songdata.db --repo OWNER/REPO --clobb
 ### タグ名
 
 - **引数を省略**した場合、タグは自動で **`songdata-YYYY-MM-DD`**（実行日の日付）になります。
-- **固定タグ**にしたい場合は第 1 引数または `-Tag` で指定します（Actions の **`SONGDATA_RELEASE_TAG`** と一致させてください）。
+- **固定タグ**にしたい場合は第 1 引数または `-Tag` で指定します（GitHub の **Latest Release** はタグ名に依存しないため、Actions 用の変数と揃える必要はありません）。
 
 ```bat
 upload-songdata-github-release.bat
@@ -171,17 +171,23 @@ https://github.com/OWNER/REPO/releases/download/TAG/songdata.db
 
 ## GitHub Actions（本リポジトリのワークフロー）
 
-`.github/workflows/pages.yml` では、リポジトリ変数 **`SONGDATA_RELEASE_TAG`** に上記の **タグ名**（例: `songdata-2026-05-26`）を設定すると、チェックアウト直後に **`gh release download`** で `data/songdata.db` を取得し、存在・非空を検証します。
+`.github/workflows/pages.yml` では、チェックアウト直後に **`gh release download`**（**タグ省略**＝ [Latest release](https://docs.github.com/en/rest/releases/releases#get-the-latest-release) と同じ対象）で、同一リポジトリの **Latest** として公開されている Release から **`songdata.db`** を `data/songdata.db` に取得し、**ファイルが存在し中身が空でないこと**を検証します。取得に失敗したり空ファイルのときは **ワークフローがエラー**で止まります。
 
-**重要:** 変数が **空**のままだと Release からは取得されず、`data/songdata.db` もリポジトリに含まれない（`.gitignore`）ため、**`filter_table.py` が GitHub Actions 上でエラー終了**します（空の難易度表がデプロイされるのを防ぐため。詳細は `tools/table-filter/filter_table.py` と [github-actions-songdata-table-filter.md](./github-actions-songdata-table-filter.md)）。アップロードに成功したあと難易度表が更新されないときは、まず **`SONGDATA_RELEASE_TAG` がその Release のタグと一致しているか**を確認してください。
+**重要:** `data/songdata.db` はリポジトリに含まれない（`.gitignore`）ため、**Latest Release に `songdata.db` アセットが無い**と `filter_table.py` も **GitHub Actions 上でエラー終了**します（空の難易度表がデプロイされるのを防ぐため。詳細は `tools/table-filter/filter_table.py` と [github-actions-songdata-table-filter.md](./github-actions-songdata-table-filter.md)）。難易度表が更新されないときは、**プレリリースではない通常の Release として公開されているか**、**その Release が Latest になっているか**（GitHub の Releases 画面で **Latest** バッジ）、**アセット名が `songdata.db` か**を確認してください。
 
-設定場所: **Settings → Secrets and variables → Actions → Variables** で `SONGDATA_RELEASE_TAG` を追加。
+**プレリリースのみ**だと GitHub の「Latest」に載らず、CLI の既定ダウンロード対象から外れることがあります。CI で取得させたいときは **通常の Release** として公開するか、ドラフトを解除してください。
+
+リポジトリ変数 **`SONGDATA_RELEASE_TAG`** は **不要**です（以前の版で使っていた場合は削除して問題ありません）。
 
 プライベートリポジトリでも、既定の `GITHUB_TOKEN` で同一リポジトリの Release を取得できます。
 
 ## ローカルで取得する例
 
 ```bash
+# Latest（タグ省略）から取得
+gh release download -p songdata.db -O data/songdata.db --repo OWNER/REPO
+
+# 特定タグから取得
 gh release download songdata-2026-05-26 -p songdata.db -O data/songdata.db --repo OWNER/REPO
 ```
 
@@ -189,6 +195,6 @@ gh release download songdata-2026-05-26 -p songdata.db -O data/songdata.db --rep
 
 ## 注意
 
-- **タグ名とファイル名**を Actions 変数・ドキュメント・実際の Release で揃える（バッチはタグ省略時 **`songdata-YYYY-MM-DD`** を使うため、その日付のタグを **`SONGDATA_RELEASE_TAG`** に設定するか、`-Tag` で固定名にする）
+- **アセット名**は **`songdata.db`**（ワークフロー・CI はこの名前のみを取得します）
 - **100MB 以上**の単一アセットは GitHub の制限に抵触するため、その場合はオブジェクトストレージ（S3 互換など）を検討してください
 - Release を消すと **そのタグに紐づくダウンロード URL も無効**になります。長期運用するならタグの命名規則を決め、**上書き用の別タグ**にするか、履歴として残すかを決めてください

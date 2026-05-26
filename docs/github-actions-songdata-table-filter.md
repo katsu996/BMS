@@ -8,15 +8,15 @@
 
 **はい。** 次を満たせば、ランナー上で「元表を取得 → `songdata.db` に SQL → ハッシュ交差でフィルタ → `docs/table/` に JSON 出力 → `docs/` 全体を GitHub Pages にデプロイ」まで完結します。
 
-1. 実行時に **`data/songdata.db`** がランナー上に存在する（**ローカル配置**、またはリポジトリ変数 **`SONGDATA_RELEASE_TAG`** を設定してチェックアウト直後に **GitHub Release から `songdata.db` を取得**。手順は [github-releases-songdata.md](./github-releases-songdata.md)）。
+1. 実行時に **`data/songdata.db`** がランナー上に存在する（**ローカル配置**、またはチェックアウト直後に **同一リポジトリの Latest GitHub Release から `songdata.db` を取得**（`.github/workflows/pages.yml`）。手順は [github-releases-songdata.md](./github-releases-songdata.md)）。
 2. 統合難易度表のヘッダーが **HTTPS で取得できる**（`filter_config.json` の **`source_tables`**（インラインまたは **`source_tables_path`** で読み込んだ別 JSON）、または後方互換の **`source_header_urls`** / **`source_header_url`**）。データ本体は各ヘッダーの `data_url`（**相対パスはヘッダー JSON の URL を基準に解決**）または単一ソース時の `source_data_url`。
 3. 生成ヘッダーの `data_url` は **既定でファイル名のみ**（例: `filtered_data.json`）とし、beatoraja がヘッダーと同じディレクトリ上のデータ JSON を取得できるようにします（`SITE_BASE_URL` は不要）。**絶対 URL で出したい場合のみ** `use_relative_data_url: false` と `site_base_url` / `SITE_BASE_URL` を併用します。
 
-**GitHub が提供していないもの:** ブラウザだけで手元の DB を渡す専用 UIはありません。DB は **Git にコミットして更新する**か、**Release アセットと Actions 変数でランナーに配置する**想定です。
+**GitHub が提供していないもの:** ブラウザだけで手元の DB を渡す専用 UIはありません。DB は **Git にコミットして更新する**か、**Release アセットとして公開し Actions が Latest から取得する**想定です。
 
 ## CI（`Deploy GitHub Pages`）で起きること
 
-ワークフローは [.github/workflows/pages.yml](../.github/workflows/pages.yml) です。`main` への push または手動 dispatch で実行されます。**`build` ジョブ**でテスト・JSON 生成・`actions/upload-pages-artifact` まで行い、**`deploy` ジョブ**（`needs: build`）で `actions/deploy-pages` のみを実行する構成です（[actions/deploy-pages](https://github.com/actions/deploy-pages) が推奨する専用デプロイジョブと、[starter-workflows の Pages 例](https://github.com/actions/starter-workflows/tree/main/pages)と同型です）。リポジトリ変数 **`SONGDATA_RELEASE_TAG`** が空でないとき、チェックアウトの直後に **GitHub CLI で Release アセット `songdata.db` を `data/songdata.db` に取得**します（[github-releases-songdata.md](./github-releases-songdata.md)）。**変数が空のまま**だと DB が配置されず、`filter_table.py` は **GitHub Actions 上ではエラー終了**します（生成 JSON が `.gitignore` のため、スキップすると空サイトになるのを防ぐため）。
+ワークフローは [.github/workflows/pages.yml](../.github/workflows/pages.yml) です。`main` への push または手動 dispatch で実行されます。**`build` ジョブ**でテスト・JSON 生成・`actions/upload-pages-artifact` まで行い、**`deploy` ジョブ**（`needs: build`）で `actions/deploy-pages` のみを実行する構成です（[actions/deploy-pages](https://github.com/actions/deploy-pages) が推奨する専用デプロイジョブと、[starter-workflows の Pages 例](https://github.com/actions/starter-workflows/tree/main/pages)と同型です）。チェックアウトの直後に **GitHub CLI で Latest Release のアセット `songdata.db` を `data/songdata.db` に取得**します（[github-releases-songdata.md](./github-releases-songdata.md)）。**Release が無い・Latest に `songdata.db` が無い・取得結果が空**のときはこのステップで **エラー**になり、その後の `filter_table.py` でも **`songdata.db` 不在なら GitHub Actions 上ではエラー終了**します（生成 JSON が `.gitignore` のため、スキップすると空サイトになるのを防ぐため）。
 
 ### 「Failed to queue workflow run. Please try again.」が出るとき
 
@@ -25,7 +25,7 @@
 | 順序 | 処理 | 入力 | 主な出力 |
 |------|------|------|----------|
 | 0 | `ruff check` / `unittest` / `check_filter_config_example_sync.py`（`build` ジョブ） | `tools/table-filter/` | 静的解析・テスト・設定例のキー整合 |
-| 1 | `filter_table.py` | `tools/table-filter/filter_config.json`、**`data/songdata.db`（CI では必須。Release 変数または同パスに配置）** | `docs/table/filtered_data.json`（beatoraja 用・拡張列除去）、`filtered_data_enriched.json`（Pages 用・出自列あり）、`filtered_header.json`、`level_stats.json`（条件によりスキップ可） |
+| 1 | `filter_table.py` | `tools/table-filter/filter_config.json`、**`data/songdata.db`（CI では必須。Latest Release から取得または同パスに配置）** | `docs/table/filtered_data.json`（beatoraja 用・拡張列除去）、`filtered_data_enriched.json`（Pages 用・出自列あり）、`filtered_header.json`、`level_stats.json`（条件によりスキップ可） |
 | 2 | `build_pages_table.py` | 同上設定、`filtered_data_enriched.json`（無ければ `filtered_data.json`）、`songdata.db` | `docs/table/browser_rows.json`（トップ `index.html` の一覧表用） |
 | 3 | `check_browser_rows_pages_ui.py` | `docs/table/browser_rows.json` | `meta.pages_ui` の必須キー（`index_table`・IR・Chart 等）が欠けていれば **終了コード 1** |
 | 4 | `smoke_check_outputs.py` | 生成済み `docs/table/*.json` | 空データやヘッダー不備があれば **終了コード 1** |

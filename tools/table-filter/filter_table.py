@@ -425,8 +425,8 @@ def main() -> None:
             _die(
                 f"songdata.db が見つかりません（GitHub Actions）: {songdata}\n"
                 "このリポジトリでは生成 JSON が Git 管理外のため、フィルタをスキップすると表が空のまま公開されます。\n"
-                "対処: Settings → Secrets and variables → Actions → Variables で "
-                "SONGDATA_RELEASE_TAG を、songdata.db を載せた Release のタグ名に設定してください（アップロード時のタグと一致）。\n"
+                "対処: 同一リポジトリの GitHub Release のうち **Latest** として公開されているものに、"
+                "アセット名 **songdata.db** を添付してください（.github/workflows/pages.yml がチェックアウト直後に取得）。\n"
                 "手順: docs/github-releases-songdata.md\n"
                 "意図的に DB 無しで続行する場合のみ、ワークフローに FILTER_CI_ALLOW_MISSING_SONGDATA=1 を設定してください。"
             )
