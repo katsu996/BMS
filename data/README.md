@@ -4,7 +4,7 @@ beatoraja がローカルで生成する **`songdata.db`** を、このパスに
 
 ## 手動での更新手順
 
-**差し替え・コミット・push・サイズの注意**など、運用上の手順はすべて **[リポジトリ直下の README.md](../README.md)** の「`songdata.db` を差し替える」に書いています。
+**差し替え・コミット・push・サイズの注意**など、運用上の手順はすべて **[リポジトリ直下の README.md](../README.md)** の「`songdata.db` を差し替える」に書いています。GitHub の Web からはアップロードしづらいサイズのときは **[scripts/README.md](../scripts/README.md)** の補助スクリプトも参照してください。
 
 ## サイズが大きい場合
 

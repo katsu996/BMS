@@ -21,7 +21,8 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
 2. 本リポジトリの **`data/songdata.db`** に上書きする（パスをずらさない）
 3. 変更をリポジトリに載せる  
    - **Git**: `git add data/songdata.db` → `git commit` → `git push`  
-   - **GitHub Web**: **Add file → Upload files** で `data/songdata.db` を置き換えてコミット
+   - **GitHub Web**: **Add file → Upload files** で `data/songdata.db` を置き換えてコミット（**25MB 超などで Web からアップロードできない**場合は Web は使わない）
+   - **大きい DB をリポジトリ外からまとめて push する（推奨）:** [scripts/commit-songdata-push.bat](scripts/commit-songdata-push.bat)（Windows）または [scripts/commit-songdata-push.sh](scripts/commit-songdata-push.sh)（Linux / macOS）を **`songdata.db` と同じフォルダにコピー**し、`REPO_ROOT`（または環境変数 `K_ORIGINAL_REPO`）を設定して実行します。詳細は [scripts/README.md](scripts/README.md) を参照してください。
 
 **補足:** `songdata.db` は **Pages のサイト上には出ません**。Actions のランナー上でフィルタにだけ使われます。ファイルが大きい場合は [data/README.md](data/README.md) の注意も読んでください。
 
