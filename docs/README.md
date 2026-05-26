@@ -18,14 +18,14 @@
 | **`tools/table-filter/config/filter_config.json` のキー一覧** | [filter-config-schema.md](./filter-config-schema.md)（一覧は [../tools/table-filter/config/README.md](../tools/table-filter/config/README.md)） |
 | **Pages トップの列・UI JSON** | [pages-ui-config.md](./pages-ui-config.md) |
 
+## BMS / beatoraja 一般の補足
+
+本リポジトリの **統合難易度表の運用・CI・設定** とは切り離した、BMS クライアントや難易度表まわりの背景メモは **[bms/](./bms/README.md)** にまとめています。
+
 ## その他の索引
 
 | 内容 | ファイル |
 |------|----------|
 | GitHub Pages の仕組み・別リポジトリへ複製 | [github-pages-publish-guide.md](./github-pages-publish-guide.md) |
-| beatoraja 向け難易度表 JSON の前提 | [beatoraja-jbmstable-table-json.md](./beatoraja-jbmstable-table-json.md) |
+| beatoraja 向け難易度表 JSON の前提（本ツール出力の契約） | [beatoraja-jbmstable-table-json.md](./beatoraja-jbmstable-table-json.md) |
 | フロント移行の判断材料 | [frontend-migration-costs.md](./frontend-migration-costs.md) |
-| beatoraja 楽曲 DB 仕様 | [bms-beatoraja-song-db.md](./bms-beatoraja-song-db.md) |
-| 仮想フォルダ要件 | [requirements-filtered-bms-folder-tool.md](./requirements-filtered-bms-folder-tool.md) |
-| 難易度表 URL・自作公開（beatoraja UI 補足） | [beatoraja-difficulty-table-url-and-filtered-publish.md](./beatoraja-difficulty-table-url-and-filtered-publish.md) |
-| LR2oraja 系との差分 | [beatoraja-vs-lr2oraja-derivatives.md](./beatoraja-vs-lr2oraja-derivatives.md) |

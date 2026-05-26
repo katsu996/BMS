@@ -167,11 +167,11 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
 
 | 内容 | パス |
 |------|------|
-| beatoraja 楽曲 DB（`songdata.db` / `songinfo.db`）の整理 | [docs/bms-beatoraja-song-db.md](docs/bms-beatoraja-song-db.md) |
-| 条件付き仮想フォルダ（`folder/default.json`）の要件・調査 | [docs/requirements-filtered-bms-folder-tool.md](docs/requirements-filtered-bms-folder-tool.md) |
+| beatoraja 楽曲 DB（`songdata.db` / `songinfo.db`）の整理 | [docs/bms/bms-beatoraja-song-db.md](docs/bms/bms-beatoraja-song-db.md) |
+| 条件付き仮想フォルダ（`folder/default.json`）の要件・調査 | [docs/bms/requirements-filtered-bms-folder-tool.md](docs/bms/requirements-filtered-bms-folder-tool.md) |
 | `default.json` 断片の例（`minbpm != maxbpm`） | [docs/snippets/beatoraja-default-json-snippet-changing-bpm.json](docs/snippets/beatoraja-default-json-snippet-changing-bpm.json) |
-| beatoraja と LR2oraja / Endless Dream の違い | [docs/beatoraja-vs-lr2oraja-derivatives.md](docs/beatoraja-vs-lr2oraja-derivatives.md) |
-| 難易度表の URL 公開・自作表の考え方 | [docs/beatoraja-difficulty-table-url-and-filtered-publish.md](docs/beatoraja-difficulty-table-url-and-filtered-publish.md) |
+| beatoraja と LR2oraja / Endless Dream の違い | [docs/bms/beatoraja-vs-lr2oraja-derivatives.md](docs/bms/beatoraja-vs-lr2oraja-derivatives.md) |
+| 難易度表の URL 公開・自作表の考え方 | [docs/bms/beatoraja-difficulty-table-url-and-filtered-publish.md](docs/bms/beatoraja-difficulty-table-url-and-filtered-publish.md) |
 | GitHub Pages の仕組み・別リポジトリへのコピー手順 | [docs/github-pages-publish-guide.md](docs/github-pages-publish-guide.md) |
 | **CI（Pages ワークフロー）のジョブ順・`songdata.db` 取得** | [docs/ci-github-pages-workflow.md](docs/ci-github-pages-workflow.md) |
 | **Actions・フィルタの内部**（データフロー、出自メタ、beatoraja 互換） | [docs/github-actions-songdata-table-filter.md](docs/github-actions-songdata-table-filter.md) |
