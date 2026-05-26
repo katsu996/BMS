@@ -4,34 +4,39 @@
   Upload songdata.db to a GitHub Release via the REST API.
 
 .DESCRIPTION
-  1) Get release by tag, or create it
-  2) Delete same-named asset if present
-  3) POST raw bytes to upload_url
+  Intended to run from any folder: copy this .ps1, the .bat, and a secrets file
+  next to your songdata.db. Tag defaults to songdata-YYYY-MM-DD if omitted.
 
-  Auth: optional -Token, else env GITHUB_TOKEN / GH_TOKEN, else values from
-  upload-songdata-github-release.local.ps1 (see .example file; gitignored).
+  Auth (later steps override earlier):
+  1) upload-songdata-github-release.secrets.txt (same folder as this script)
+  2) upload-songdata-github-release.local.ps1 (dot-sourced; see .example in repo)
+  3) env GITHUB_TOKEN / GH_TOKEN and GITHUB_REPOSITORY
+  4) -Token / -Repo
 
 .PARAMETER Tag
-  Release tag (e.g. songdata-2026-05-26). Match SONGDATA_RELEASE_TAG in Actions.
+  Release tag. If empty: songdata-<today yyyy-MM-dd>. Match SONGDATA_RELEASE_TAG in Actions.
 
 .PARAMETER Repo
-  owner/repo. Default: env GITHUB_REPOSITORY after optional local.ps1.
+  owner/repo. Default: env GITHUB_REPOSITORY.
 
 .PARAMETER Token
-  PAT override. Prefer leaving empty and using local.ps1 or env vars.
+  PAT override (prefer secrets file or env).
 
 .PARAMETER SongdataPath
-  File to upload. Default: repo data/songdata.db
+  File to upload. Default: songdata.db next to this script, else repo data/songdata.db.
 
 .PARAMETER AssetName
   Asset name on GitHub. Default: songdata.db
 
 .PARAMETER TargetCommitish
-  Only when creating a release: target branch/sha if tag missing remotely.
+  When creating a release for a new remote tag: branch or SHA. If empty, -DefaultBranch is used.
+
+.PARAMETER DefaultBranch
+  Used as target_commitish when creating a release if -TargetCommitish is empty. Default: main.
 #>
 param(
-    [Parameter(Mandatory = $true, Position = 0)]
-    [string] $Tag,
+    [Parameter(Mandatory = $false, Position = 0)]
+    [string] $Tag = "",
 
     [Parameter(Mandatory = $false)]
     [string] $Repo = "",
@@ -46,16 +51,46 @@ param(
     [string] $AssetName = "songdata.db",
 
     [Parameter(Mandatory = $false)]
-    [string] $TargetCommitish = ""
+    [string] $TargetCommitish = "",
+
+    [Parameter(Mandatory = $false)]
+    [string] $DefaultBranch = "main"
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+$secretsTxt = Join-Path $PSScriptRoot "upload-songdata-github-release.secrets.txt"
 $localCfg = Join-Path $PSScriptRoot "upload-songdata-github-release.local.ps1"
+
+function Import-SecretsTxtFile {
+    param([string] $Path)
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return
+    }
+    $lines = @(
+        Get-Content -LiteralPath $Path -Encoding UTF8 |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { $_ -and -not $_.StartsWith("#") }
+    )
+    if ($lines.Count -ge 1) {
+        $env:GITHUB_TOKEN = $lines[0]
+    }
+    if ($lines.Count -ge 2) {
+        $env:GITHUB_REPOSITORY = $lines[1]
+    }
+}
+
+Import-SecretsTxtFile -Path $secretsTxt
 if (Test-Path -LiteralPath $localCfg) {
     . $localCfg
 }
+
+if (-not $Tag -or $Tag.Trim() -eq "") {
+    $Tag = "songdata-" + (Get-Date -Format "yyyy-MM-dd")
+}
+$Tag = $Tag.Trim()
+Write-Host "Release tag: $Tag"
 
 $apiRoot = "https://api.github.com"
 $apiVersion = "2022-11-28"
@@ -68,7 +103,20 @@ function Get-RepoToken {
     $t = $env:GITHUB_TOKEN
     if (-not $t) { $t = $env:GH_TOKEN }
     if (-not $t) {
-        throw "Missing token. Set GITHUB_TOKEN or GH_TOKEN, pass -Token, or create scripts/upload-songdata-github-release.local.ps1 (see .example)."
+        $msg = @"
+Missing token.
+
+Put your PAT in ONE of these (same folder as upload-songdata-github-release.ps1):
+  1) $secretsTxt
+     Line 1: token (required)
+     Line 2: owner/repo (optional if GITHUB_REPOSITORY is already set)
+     (Copy from upload-songdata-github-release.secrets.txt.example in the repo.)
+  2) $localCfg
+     (Copy from upload-songdata-github-release.local.ps1.example in the repo.)
+
+Or set environment variable GITHUB_TOKEN / GH_TOKEN before running.
+"@
+        throw $msg.Trim()
     }
     return $t
 }
@@ -194,7 +242,7 @@ function Remove-ReleaseAsset {
 
 function Expand-UploadUri {
     param([string] $UploadUrlTemplate, [string] $Name)
-    # Use single-quoted pattern: in double quotes, `$` would break the -replace argument list on Windows PowerShell 5.1
+    # Single-quoted pattern: in double quotes `$` breaks -replace on Windows PowerShell 5.1
     $base = $UploadUrlTemplate -replace '\{\?name,label\}$', ''
     return ($base + "?name=" + [uri]::EscapeDataString($Name))
 }
@@ -217,7 +265,16 @@ if (-not $Repo -or $Repo.Trim() -eq "") {
     $Repo = $env:GITHUB_REPOSITORY
 }
 if (-not $Repo -or $Repo.Trim() -eq "") {
-    throw "Set repo with -Repo owner/name or GITHUB_REPOSITORY (e.g. in local.ps1)."
+    $msg = @"
+Missing repository (owner/name).
+
+Set line 2 in:
+  $secretsTxt
+or set in:
+  $localCfg
+or set environment variable GITHUB_REPOSITORY, or pass -Repo owner/name.
+"@
+    throw $msg.Trim()
 }
 $parts = $Repo.Trim().Split("/")
 if ($parts.Length -ne 2 -or -not $parts[0] -or -not $parts[1]) {
@@ -227,20 +284,30 @@ $owner = $parts[0]
 $name = $parts[1]
 
 if (-not $SongdataPath) {
-    $repoRoot = Split-Path $PSScriptRoot -Parent
-    $SongdataPath = Join-Path (Join-Path $repoRoot "data") $AssetName
+    $nextToScript = Join-Path $PSScriptRoot $AssetName
+    if (Test-Path -LiteralPath $nextToScript -PathType Leaf) {
+        $SongdataPath = $nextToScript
+    }
+    else {
+        $repoRoot = Split-Path $PSScriptRoot -Parent
+        $SongdataPath = Join-Path (Join-Path $repoRoot "data") $AssetName
+    }
 }
 
 if (-not (Test-Path -LiteralPath $SongdataPath -PathType Leaf)) {
-    throw "File not found: $SongdataPath"
+    throw "File not found: $SongdataPath (copy songdata.db next to the script, use -SongdataPath, or keep repo layout data/$AssetName)"
 }
 
 $release = Get-ReleaseByTag -Owner $owner -Name $name -TagName $Tag -Headers $headers
 if ($null -eq $release) {
     Write-Host "No release for tag; creating: tag=$Tag"
     $title = "$AssetName ($Tag)"
-    $notes = "Uploaded via scripts/upload-songdata-github-release.ps1"
-    $release = New-GitHubRelease -Owner $owner -Name $name -TagName $Tag -Title $title -BodyText $notes -Commitish $TargetCommitish -Headers $headers
+    $notes = "Uploaded via upload-songdata-github-release.ps1"
+    $commitish = $TargetCommitish
+    if (-not $commitish) {
+        $commitish = $DefaultBranch
+    }
+    $release = New-GitHubRelease -Owner $owner -Name $name -TagName $Tag -Title $title -BodyText $notes -Commitish $commitish -Headers $headers
 }
 
 $rid = [int]$release.id
@@ -263,3 +330,4 @@ Send-ReleaseAsset -UploadUri $uploadUri -FilePath $SongdataPath -Token $token
 
 $dl = "https://github.com/$owner/$name/releases/download/$Tag/$AssetName"
 Write-Host "Done. Public download URL example: $dl"
+Write-Host "If Actions uses this file, set repository variable SONGDATA_RELEASE_TAG to: $Tag"

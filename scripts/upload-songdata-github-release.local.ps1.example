@@ -1,5 +1,7 @@
-# Copy to upload-songdata-github-release.local.ps1 (gitignored) and edit.
+# Copy to upload-songdata-github-release.local.ps1 in the SAME folder as
+# upload-songdata-github-release.ps1 (e.g. next to beatoraja's songdata.db).
 # Use single quotes for the token so special characters are safe.
+# Alternatively use upload-songdata-github-release.secrets.txt (see .example).
 
 $env:GITHUB_TOKEN = 'ghp_REPLACE_ME'
 $env:GITHUB_REPOSITORY = 'owner/repo'
