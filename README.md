@@ -20,7 +20,7 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
 本リポジトリでは **`songdata.db` は Git に含めません**（サイズ制限の回避）。**GitHub Releases のアセット**として公開し、**GitHub Actions** は **同一リポジトリの「Latest」Release** から **`songdata.db`** を毎回ダウンロードします（リポジトリ変数は不要）。
 
 1. **Release へアップロード**（いずれか）
-   - **Windows（推奨）:** `songdata.db` があるフォルダに、`scripts/upload-songdata-github-release.bat` と同梱の `.ps1` をコピーし、**同じフォルダ**に認証用の **`upload-songdata-github-release.secrets.txt`**（例は `scripts/upload-songdata-github-release.secrets.txt.example`）を置いてから `.bat` をダブルクリックまたは実行します。タグは省略すると **`songdata-当日日付`** が自動で使われます。**`ghp_REPLACE_ME` はダミーなので削除し、1 行目を本物の PAT に置き換える**必要があります（メモ帳は UTF-8 で保存）。具体手順は [docs/github-releases-songdata.md](docs/github-releases-songdata.md) の **`secrets.txt` の書き方（詳細・手順）** を参照してください。
+   - **Windows（推奨）:** `songdata.db` があるフォルダに、`scripts/upload-songdata-github-release.bat` / `.ps1` / **`upload-songdata-github-release.secrets.template.txt`** をコピーし、テンプレートを **`upload-songdata-github-release.secrets.txt`** にリネームして 1 行目に PAT、2 行目に `owner/repo` を書いたうえで `.bat` を実行します。タグを省略すると **`songdata-当日日付`** が自動で使われます。**`ghp_REPLACE_ME` はダミーなので削除し、1 行目を本物の PAT のみにする**必要があります（メモ帳は UTF-8 で保存）。具体手順は [docs/github-releases-songdata.md](docs/github-releases-songdata.md) の **`secrets.txt` の書き方（詳細・手順）** を参照してください。
    - **GitHub CLI:** 同ドキュメントの `gh release create` / `gh release upload` の例
 2. **Actions が取りに行く Release:** 新しい `songdata.db` を載せた Release は、**ドラフトでなくプレリリースでもない**通常の Release として公開し、必要なら GitHub 上で **「Latest」** になるようにしてください（通常は最新の非プレリリースが Latest になります）。**アセット名は `songdata.db`** にしてください。取得に失敗したりファイルが空だと **ワークフローはエラー**で止まります。
 

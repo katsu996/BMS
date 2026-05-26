@@ -5,8 +5,6 @@ __pycache__/
 # beatoraja の DB（GitHub Releases のアセットで配布。ローカル・CI で配置）
 data/songdata.db
 
-# Release upload helper: copy from upload-songdata-github-release.local.ps1.example
-scripts/upload-songdata-github-release.local.ps1
 # Plain-text secrets next to the upload script (any copy location)
 upload-songdata-github-release.secrets.txt
 

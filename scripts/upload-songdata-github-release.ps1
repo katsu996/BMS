@@ -13,23 +13,15 @@
     （5.1 で `$"` が誤展開される問題の回避）。ドキュメント: docs/github-releases-songdata.md
 
 .DESCRIPTION
-  Intended to run from any folder: copy this .ps1, the .bat, and a secrets file
-  next to your songdata.db. Tag defaults to songdata-YYYY-MM-DD if omitted.
+  Intended to run from any folder: copy this .ps1, the .bat, and secrets next to your songdata.db.
+  Tag defaults to songdata-YYYY-MM-DD if omitted.
 
-  Auth (later steps override earlier):
-  1) upload-songdata-github-release.secrets.txt (same folder as this script)
-  2) upload-songdata-github-release.local.ps1 (dot-sourced; see .example in repo)
-  3) env GITHUB_TOKEN / GH_TOKEN and GITHUB_REPOSITORY
-  4) -Token / -Repo
+  Authentication and target repository are read only from
+  upload-songdata-github-release.secrets.txt in the same folder as this script
+  (see upload-songdata-github-release.secrets.template.txt in the repo).
 
 .PARAMETER Tag
   Release tag. If empty: songdata-<today yyyy-MM-dd>. CI downloads songdata.db from the repo's latest GitHub Release.
-
-.PARAMETER Repo
-  owner/repo. Default: env GITHUB_REPOSITORY.
-
-.PARAMETER Token
-  PAT override (prefer secrets file or env).
 
 .PARAMETER SongdataPath
   File to upload. Default: songdata.db next to this script, else repo data/songdata.db.
@@ -48,12 +40,6 @@ param(
     [string] $Tag = "",
 
     [Parameter(Mandatory = $false)]
-    [string] $Repo = "",
-
-    [Parameter(Mandatory = $false)]
-    [string] $Token = "",
-
-    [Parameter(Mandatory = $false)]
     [string] $SongdataPath = "",
 
     [Parameter(Mandatory = $false)]
@@ -70,7 +56,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $secretsTxt = Join-Path $PSScriptRoot "upload-songdata-github-release.secrets.txt"
-$localCfg = Join-Path $PSScriptRoot "upload-songdata-github-release.local.ps1"
+$secretsTemplate = Join-Path $PSScriptRoot "upload-songdata-github-release.secrets.template.txt"
 
 function Unwrap-QuotedToken {
     param([string] $Text)
@@ -103,12 +89,22 @@ function Normalize-RepoLine {
     return (Unwrap-QuotedToken -Text $s)
 }
 
-function Import-SecretsTxtFile {
+function Read-UploadSecretsTxt {
     param([string] $Path)
     if (-not (Test-Path -LiteralPath $Path)) {
-        return
+        throw (@"
+Missing secrets file:
+  $Path
+
+Copy scripts/upload-songdata-github-release.secrets.template.txt from the repository
+to the same folder as this .ps1, rename it to:
+  upload-songdata-github-release.secrets.txt
+Then set line 1 = PAT and line 2 = owner/repo (UTF-8).
+
+Reference template on disk (if you copied scripts together):
+  $secretsTemplate
+"@).Trim()
     }
-    # UTF-8 with or without BOM (avoid CMD/Notepad oddities vs Get-Content defaults).
     $enc = New-Object System.Text.UTF8Encoding $false
     $rawLines = [System.IO.File]::ReadAllLines($Path, $enc)
     $lines = New-Object System.Collections.Generic.List[string]
@@ -118,12 +114,21 @@ function Import-SecretsTxtFile {
         if ($t.StartsWith("#")) { continue }
         [void]$lines.Add($t)
     }
+    $pat = ""
+    $repo = ""
     if ($lines.Count -ge 1) {
-        $env:GITHUB_TOKEN = (Normalize-PatLine -Line $lines[0])
+        $pat = Normalize-PatLine -Line $lines[0]
     }
     if ($lines.Count -ge 2) {
-        $env:GITHUB_REPOSITORY = (Normalize-RepoLine -Line $lines[1])
+        $repo = Normalize-RepoLine -Line $lines[1]
     }
+    if (-not $pat) {
+        throw "Line 1 (Personal Access Token) is missing or empty in: $Path"
+    }
+    if (-not $repo) {
+        throw "Line 2 (owner/repo) is required in: $Path"
+    }
+    return [pscustomobject]@{ Pat = $pat; Repo = $repo }
 }
 
 function Assert-NoPlaceholderToken {
@@ -139,7 +144,7 @@ Token in secrets file still looks like a placeholder or example text.
 Line 1 must be your REAL Personal Access Token only:
   - Remove ALL of the sample text (for example delete the entire string ghp_REPLACE_ME).
   - Paste the token GitHub shows you ONCE when you create it (you cannot view it again later).
-  - Do not add quotes, spaces, or words like token= unless you use GITHUB_TOKEN=... form.
+  - Optional: use GITHUB_TOKEN=value form on line 1 only.
 
 See docs/github-releases-songdata.md section "secrets.txt の書き方（詳細）".
 "@
@@ -152,11 +157,6 @@ See docs/github-releases-songdata.md section "secrets.txt の書き方（詳細�
     }
 }
 
-Import-SecretsTxtFile -Path $secretsTxt
-if (Test-Path -LiteralPath $localCfg) {
-    . $localCfg
-}
-
 if (-not $Tag -or $Tag.Trim() -eq "") {
     $Tag = "songdata-" + (Get-Date -Format "yyyy-MM-dd")
 }
@@ -165,34 +165,6 @@ Write-Host "Release tag: $Tag"
 
 $apiRoot = "https://api.github.com"
 $apiVersion = "2022-11-28"
-
-function Get-RepoToken {
-    param([string] $CmdLineToken)
-    if ($CmdLineToken) {
-        Assert-NoPlaceholderToken -Token $CmdLineToken
-        return $CmdLineToken
-    }
-    $t = $env:GITHUB_TOKEN
-    if (-not $t) { $t = $env:GH_TOKEN }
-    if (-not $t) {
-        $msg = @"
-Missing token.
-
-Put your PAT in ONE of these (same folder as upload-songdata-github-release.ps1):
-  1) $secretsTxt
-     Line 1: token (required)
-     Line 2: owner/repo (optional if GITHUB_REPOSITORY is already set)
-     (Copy from upload-songdata-github-release.secrets.txt.example in the repo.)
-  2) $localCfg
-     (Copy from upload-songdata-github-release.local.ps1.example in the repo.)
-
-Or set environment variable GITHUB_TOKEN / GH_TOKEN before running.
-"@
-        throw $msg.Trim()
-    }
-    Assert-NoPlaceholderToken -Token $t
-    return $t
-}
 
 function Get-ApiHeaders {
     param([string] $Token)
@@ -406,27 +378,18 @@ function Send-ReleaseAsset {
 }
 
 # --- main ---
-$token = Get-RepoToken -CmdLineToken $Token
+$secrets = Read-UploadSecretsTxt -Path $secretsTxt
+Assert-NoPlaceholderToken -Token $secrets.Pat
+$token = $secrets.Pat
 $headers = Get-ApiHeaders -Token $token
 
-if (-not $Repo -or $Repo.Trim() -eq "") {
-    $Repo = $env:GITHUB_REPOSITORY
+$Repo = $secrets.Repo.Trim()
+if (-not $Repo) {
+    throw "Line 2 (owner/repo) is empty in: $secretsTxt"
 }
-if (-not $Repo -or $Repo.Trim() -eq "") {
-    $msg = @"
-Missing repository (owner/name).
-
-Set line 2 in:
-  $secretsTxt
-or set in:
-  $localCfg
-or set environment variable GITHUB_REPOSITORY, or pass -Repo owner/name.
-"@
-    throw $msg.Trim()
-}
-$parts = $Repo.Trim().Split("/")
+$parts = $Repo.Split("/")
 if ($parts.Length -ne 2 -or -not $parts[0] -or -not $parts[1]) {
-    throw "Repo must be owner/name: $Repo"
+    throw "Repo line 2 must be owner/name (got: $Repo)"
 }
 $owner = $parts[0]
 $name = $parts[1]

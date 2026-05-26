@@ -7,7 +7,7 @@
 1. **アセット名は必ず `songdata.db`**（CI はこの名前だけをダウンロードします）。
 2. **通常の Release** として公開し、GitHub の **Latest** になるようにする（**プレリリースのみ**だと Latest に載らず CI が失敗し得ます）。
 3. **`main` へ push** するか **Deploy GitHub Pages** を手動実行すると、ワークフローが **Latest から毎回** `songdata.db` を取得します。
-4. Windows でアップロードする場合は **`scripts/upload-songdata-github-release.*`** を `songdata.db` と同じフォルダへコピーし、**`upload-songdata-github-release.secrets.txt`** の書き方は下記「`secrets.txt` の書き方」を参照（**UTF-8**・1 行目に PAT 全文）。
+4. Windows でアップロードする場合は **`scripts/upload-songdata-github-release.*`** と **`upload-songdata-github-release.secrets.template.txt`** を `songdata.db` と同じフォルダへコピーし、テンプレートを **`upload-songdata-github-release.secrets.txt`** にリネームして編集します。書き方は下記「`secrets.txt` の書き方」（**UTF-8**・1 行目 PAT・2 行目 `owner/repo`）を参照してください。
 5. CI の全体像は **[ci-github-pages-workflow.md](./ci-github-pages-workflow.md)**、フィルタの挙動は **[github-actions-songdata-table-filter.md](./github-actions-songdata-table-filter.md)** を参照。
 
 以下、制限・CLI・REST API・トラブルシュートの詳細です。GitHub の Web からのファイル追加は **100MB 未満**の制限があります（[Adding a file to a repository](https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository)）。Release アセットも同様に **100MB 未満**である必要があります。25MB 超で「コンソールからのコミット」が困難な場合でも、**API や GitHub CLI でのアップロード**なら同じ枠内であれば問題なく運用できます。
@@ -56,41 +56,36 @@ gh release upload songdata-2026-05-26 data/songdata.db --repo OWNER/REPO --clobb
 |----------|------|
 | `upload-songdata-github-release.bat` | ラッパー（**ASCII のみ**。日本語や UTF-8 だけの行を入れないでください） |
 | `upload-songdata-github-release.ps1` | 本体 |
+| `upload-songdata-github-release.secrets.template.txt` | **初回のみ**リポジトリからコピー。同じフォルダで `upload-songdata-github-release.secrets.txt` にリネームして編集する |
 | `songdata.db` | アップロードする DB（**`.ps1` と同じフォルダ**に置くと自動検出） |
-| 認証用ファイル（どちらか一方） | 下記「認証」参照 |
+| **`upload-songdata-github-release.secrets.txt`** | **必須。** PAT と `owner/repo` を書く（上のテンプレートから作成） |
 
-`.bat` は **自分と同じフォルダに `cd` してから** `.ps1` を実行します。`songdata.db` は **同じフォルダに `songdata.db` という名前で置く**のが最も簡単です（別パスなら `-SongdataPath`）。
+`.bat` は **自分と同じフォルダに `cd` してから** `.ps1` を実行します。`songdata.db` は **同じフォルダに `songdata.db` という名前で置く**のが最も簡単です（別パスなら PowerShell から `-SongdataPath` を付けて `.ps1` を直接実行）。
 
 リポジトリ内の **`scripts/`** に置いたまま使う場合も同様で、そのときは **`scripts` の隣の `data/songdata.db`** を既定で探します（従来どおり）。
 
-### 認証とリポジトリ
+### 認証（`upload-songdata-github-release.secrets.txt` のみ）
 
-**`.bat` にトークンを書かないでください。** 環境によっては **`%` の誤解釈**で変数が壊れます。
+**`.bat` にトークンを書かないでください。** 環境によっては **`%` の誤解釈**で行が壊れます。
 
-次の **`.ps1` と同じディレクトリ** に置いたファイルが読み込まれます（**上にあるほど先**に読み、後から読む設定で上書きできます）。
+**`.ps1` と同じディレクトリ**に **`upload-songdata-github-release.secrets.txt`** を置きます（ファイル名の typo に注意）。初回はリポジトリの **`scripts/upload-songdata-github-release.secrets.template.txt`** をコピーし、**同じフォルダで** `upload-songdata-github-release.secrets.txt` にリネームしてから編集します（テンプレートのファイル名のままでも動きません。実行時に読むのは **`upload-songdata-github-release.secrets.txt`** だけです）。
 
-1. **`upload-songdata-github-release.secrets.txt`**（推奨・編集が簡単）  
-   リポジトリの `scripts/upload-songdata-github-release.secrets.txt.example` をコピーし、**`upload-songdata-github-release.secrets.txt`** にリネームして編集します。  
-   - **1 行目:** Personal Access Token（必須）  
-   - **2 行目:** `owner/repo`（省略可。省略時は環境変数 `GITHUB_REPOSITORY` か `local.ps1` で指定）  
-   - `#` で始まる行はコメントとして無視  
-   - 内容は **ASCII のみ**推奨（トークン・リポジトリ名は ASCII です）
-2. **`upload-songdata-github-release.local.ps1`**  
-   `scripts/upload-songdata-github-release.local.ps1.example` をコピーし、**同じフォルダに** `upload-songdata-github-release.local.ps1` として保存し、`$env:GITHUB_TOKEN` と `$env:GITHUB_REPOSITORY` を編集します。トークンは **単引用符** `'ghp_...'` が安全です。
-3. 環境変数 **`GITHUB_TOKEN`** / **`GH_TOKEN`** と **`GITHUB_REPOSITORY`**
-4. PowerShell 引数 **`-Token`** / **`-Repo`**（履歴に残りやすいので非推奨）
+- **1 行目:** Personal Access Token（必須）  
+- **2 行目:** `owner/repo`（**必須**）  
+- **`#` で始まる行**はコメントとして無視  
+- 内容は **ASCII のみ**推奨（トークン・リポジトリ名は ASCII です）
 
-リポジトリでは **`upload-songdata-github-release.secrets.txt`** と **`upload-songdata-github-release.local.ps1`** は **`.gitignore`** 済みです。
+リポジトリでは **`upload-songdata-github-release.secrets.txt`** は **`.gitignore`** 済みです（誤コミット防止）。**`upload-songdata-github-release.secrets.template.txt`** は Git 管理のひな型です。
 
 ### `secrets.txt` の書き方（詳細・手順）
 
-サンプル **`scripts/upload-songdata-github-release.secrets.txt.example`** には、ダミーの **`ghp_REPLACE_ME`** と **`owner/repo`** が書いてあります。ここでいう「1 行目にトークンを書く」とは、**そのダミー文字列を消して、代わりにあなたが GitHub で発行した本物のトークンだけを 1 行目に置く**という意味です。
+テンプレート **`scripts/upload-songdata-github-release.secrets.template.txt`** には、ダミーの **`ghp_REPLACE_ME`** と **`owner/repo`** が書いてあります。ここでいう「1 行目にトークンを書く」とは、**そのダミー文字列を消して、代わりにあなたが GitHub で発行した本物のトークンだけを 1 行目に置く**という意味です。
 
 | やること | 説明 |
 |----------|------|
 | **置き場所** | **`upload-songdata-github-release.ps1` と同じフォルダ**に、`upload-songdata-github-release.secrets.txt` という名前で保存する（名前の typo に注意）。 |
 | **1 行目** | **プレースホルダを残さない。** `ghp_REPLACE_ME` という文字列ごと削除し、その行に **GitHub が一度だけ表示する PAT** を貼り付ける。前後にスペースや全角スペースを付けない。 |
-| **2 行目** | アップロード先の **`ユーザー名または組織名/リポジトリ名`**（例: `katsu996/test-CursorToSlack`）。`owner/repo` は例なので、**必ず自分のリポジトリに書き換える**。 |
+| **2 行目** | アップロード先の **`ユーザー名または組織名/リポジトリ名`**（例: `katsu996/test-CursorToSlack`）。`owner/repo` は例なので、**必ず自分のリポジトリに書き換える**（省略不可）。 |
 | **コメント行** | `#` で始まる行は無視される。トークン行の先頭に `#` を付けない。 |
 | **引用符** | 通常は不要。付けるなら **`'ghp_...'`** のように **一重だけ**（スクリプトが外側の引用符を 1 組は剥がす）。 |
 | **`KEY=value` 形式** | 次の形式も 1・2 行目で使える: `GITHUB_TOKEN=...` / `GH_TOKEN=...`、リポジトリは `GITHUB_REPOSITORY=owner/repo` または `REPO=owner/repo`。 |
@@ -131,7 +126,7 @@ upload-songdata-github-release.bat songdata-latest
 cd /d F:\path\to\folder-with-songdata
 copy \\path\to\repo\scripts\upload-songdata-github-release.bat .
 copy \\path\to\repo\scripts\upload-songdata-github-release.ps1 .
-copy \\path\to\repo\scripts\upload-songdata-github-release.secrets.txt.example upload-songdata-github-release.secrets.txt
+copy \\path\to\repo\scripts\upload-songdata-github-release.secrets.template.txt upload-songdata-github-release.secrets.txt
 rem Edit secrets txt: line 1 = token, line 2 = owner/repo
 upload-songdata-github-release.bat
 ```
@@ -140,7 +135,7 @@ upload-songdata-github-release.bat
 
 ```bat
 cd C:\path\to\this-repo
-copy scripts\upload-songdata-github-release.secrets.txt.example scripts\upload-songdata-github-release.secrets.txt
+copy scripts\upload-songdata-github-release.secrets.template.txt scripts\upload-songdata-github-release.secrets.txt
 rem Edit secrets txt, then:
 scripts\upload-songdata-github-release.bat
 ```
