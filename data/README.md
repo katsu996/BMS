@@ -8,7 +8,7 @@ beatoraja がローカルで生成する **`songdata.db`** を、このパスに
 
 ## GitHub Releases にだけ載せる場合
 
-**Release のアセットとして `songdata.db` を配布し**、Actions 変数 **`SONGDATA_RELEASE_TAG`** で取得する方法は **[docs/github-releases-songdata.md](../docs/github-releases-songdata.md)** にまとめています。
+**Release のアセットとして `songdata.db` を配布し**、GitHub Actions が **Latest Release** から取得する方法は **[docs/github-releases-songdata.md](../docs/github-releases-songdata.md)** にまとめています。
 
 ## サイズが大きい場合
 
