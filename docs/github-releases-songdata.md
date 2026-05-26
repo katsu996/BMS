@@ -6,7 +6,7 @@
 
 1. **アセット名は必ず `songdata.db`**（CI はこの名前だけをダウンロードします）。
 2. **通常の Release** として公開し、GitHub の **Latest** になるようにする（**プレリリースのみ**だと Latest に載らず CI が失敗し得ます）。
-3. **`main` へ push** するか **Deploy GitHub Pages** を手動実行すると、ワークフローが **Latest から毎回** `songdata.db` を取得します（リポジトリ変数は不要。旧 **`SONGDATA_RELEASE_TAG`** は削除して問題ありません）。
+3. **`main` へ push** するか **Deploy GitHub Pages** を手動実行すると、ワークフローが **Latest から毎回** `songdata.db` を取得します。
 4. Windows でアップロードする場合は **`scripts/upload-songdata-github-release.*`** を `songdata.db` と同じフォルダへコピーし、**`upload-songdata-github-release.secrets.txt`** の書き方は下記「`secrets.txt` の書き方」を参照（**UTF-8**・1 行目に PAT 全文）。
 5. CI の全体像は **[ci-github-pages-workflow.md](./ci-github-pages-workflow.md)**、フィルタの挙動は **[github-actions-songdata-table-filter.md](./github-actions-songdata-table-filter.md)** を参照。
 
