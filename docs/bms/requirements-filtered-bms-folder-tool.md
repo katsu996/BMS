@@ -30,7 +30,7 @@
 - SQLite では `NULL != 値` は真にならないため、`minbpm` または `maxbpm` が NULL の行は **結果に含まれない**。
 - 本体が **譜面情報 DB（`songinfo.db`）を有効**にしている場合、`getSongDatas` は `song` と `information` の **INNER JOIN** になる。`information` に行が無い譜面は **`minbpm != maxbpm` を満たしていても一覧から落ちる**（本体既存の DENSITY フォルダ等と同じ前提）。
 
-コピー用の断片ファイル: [docs/snippets/beatoraja-default-json-snippet-changing-bpm.json](./snippets/beatoraja-default-json-snippet-changing-bpm.json)
+コピー用の断片ファイル: [docs/snippets/beatoraja-default-json-snippet-changing-bpm.json](../snippets/beatoraja-default-json-snippet-changing-bpm.json)
 
 ---
 
@@ -44,7 +44,7 @@
 | `songinfo.db` | `information`（`sha256` キー、密度・`mainbpm` 等） | 高度な条件（譜面解析結果） |
 | （任意）`score.db` / `scorelog.db` | スコア・ランプ・プレイ日時 | 「クリア済みかつ BPM≥n」など複合条件 |
 
-詳細な列一覧はリポジトリ内 `docs/bms-beatoraja-song-db.md`（存在する場合）または本体 `SQLiteSongDatabaseAccessor` / `SongInformationAccessor` の `Table(...)` 定義を参照。
+詳細な列一覧は同フォルダの [bms-beatoraja-song-db.md](./bms-beatoraja-song-db.md) または本体 `SQLiteSongDatabaseAccessor` / `SongInformationAccessor` の `Table(...)` 定義を参照。
 
 ### 2.2 BPM 関連で使える列（重要）
 
