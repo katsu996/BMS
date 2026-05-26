@@ -7,6 +7,8 @@ data/songdata.db
 
 # Release upload helper: copy from upload-songdata-github-release.local.ps1.example
 scripts/upload-songdata-github-release.local.ps1
+# Plain-text secrets next to the upload script (any copy location)
+upload-songdata-github-release.secrets.txt
 
 # Actions / ローカルで tools/table-filter が生成する難易度表（毎回再生成）
 docs/table/filtered_data.json

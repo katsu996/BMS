@@ -27,35 +27,79 @@ gh release upload songdata-2026-05-26 data/songdata.db --repo OWNER/REPO --clobb
 
 ## Windows: REST API バッチ（`scripts/upload-songdata-github-release.bat`）
 
-**GitHub REST API**（[Create a release](https://docs.github.com/en/rest/releases/releases#create-a-release) / [Upload a release asset](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset)）を **PowerShell 5.1+** から呼び出します。`.bat` はリポジトリルートに `cd` してから同梱の `.ps1` を実行するラッパーです。
+**GitHub REST API**（[Create a release](https://docs.github.com/en/rest/releases/releases#create-a-release) / [Upload a release asset](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset)）を **PowerShell 5.1+** から呼び出します。
 
-### 認証とリポジトリ（推奨: `local.ps1`）
+### 想定する置き場所（リポジトリ外でも可）
 
-**コマンドプロンプト用の `.bat` には日本語や UTF-8 のみの文字を入れないでください。** 環境によっては **`%` の誤解釈**で `GITHUB_TOKEN` が壊れ、 `'H_TOKEN'` のように別コマンド扱いになることがあります。
+多くの場合、**beatoraja など `songdata.db` があるフォルダ**に、次のファイルだけコピーして使います（**Git 管理下である必要はありません**）。
 
-トークンは次のいずれかで渡します（優先順）。
+| ファイル | 説明 |
+|----------|------|
+| `upload-songdata-github-release.bat` | ラッパー（**ASCII のみ**。日本語や UTF-8 だけの行を入れないでください） |
+| `upload-songdata-github-release.ps1` | 本体 |
+| `songdata.db` | アップロードする DB（**`.ps1` と同じフォルダ**に置くと自動検出） |
+| 認証用ファイル（どちらか一方） | 下記「認証」参照 |
 
-1. **`scripts/upload-songdata-github-release.local.ps1`**（リポジトリでは **`.gitignore`** 済み）  
-   `scripts/upload-songdata-github-release.local.ps1.example` をコピーして同フォルダに `upload-songdata-github-release.local.ps1` として保存し、**例どおり `$env:GITHUB_TOKEN` と `$env:GITHUB_REPOSITORY` を編集**してください。単行は **ASCII** のみにすると安全です。トークンは **単引用符** `'ghp_...'` で囲むとよいです。
-2. 環境変数 **`GITHUB_TOKEN`** / **`GH_TOKEN`** と **`GITHUB_REPOSITORY`**
-3. PowerShell 引数 **`-Token`** / **`-Repo`**（非対話バッチでは秘密が履歴に残りやすいので非推奨）
+`.bat` は **自分と同じフォルダに `cd` してから** `.ps1` を実行します。`songdata.db` は **同じフォルダに `songdata.db` という名前で置く**のが最も簡単です（別パスなら `-SongdataPath`）。
 
-### 例（コマンドプロンプト）
+リポジトリ内の **`scripts/`** に置いたまま使う場合も同様で、そのときは **`scripts` の隣の `data/songdata.db`** を既定で探します（従来どおり）。
+
+### 認証とリポジトリ
+
+**`.bat` にトークンを書かないでください。** 環境によっては **`%` の誤解釈**で変数が壊れます。
+
+次の **`.ps1` と同じディレクトリ** に置いたファイルが読み込まれます（**上にあるほど先**に読み、後から読む設定で上書きできます）。
+
+1. **`upload-songdata-github-release.secrets.txt`**（推奨・編集が簡単）  
+   リポジトリの `scripts/upload-songdata-github-release.secrets.txt.example` をコピーし、**`upload-songdata-github-release.secrets.txt`** にリネームして編集します。  
+   - **1 行目:** Personal Access Token（必須）  
+   - **2 行目:** `owner/repo`（省略可。省略時は環境変数 `GITHUB_REPOSITORY` か `local.ps1` で指定）  
+   - `#` で始まる行はコメントとして無視  
+   - 内容は **ASCII のみ**推奨（トークン・リポジトリ名は ASCII です）
+2. **`upload-songdata-github-release.local.ps1`**  
+   `scripts/upload-songdata-github-release.local.ps1.example` をコピーし、**同じフォルダに** `upload-songdata-github-release.local.ps1` として保存し、`$env:GITHUB_TOKEN` と `$env:GITHUB_REPOSITORY` を編集します。トークンは **単引用符** `'ghp_...'` が安全です。
+3. 環境変数 **`GITHUB_TOKEN`** / **`GH_TOKEN`** と **`GITHUB_REPOSITORY`**
+4. PowerShell 引数 **`-Token`** / **`-Repo`**（履歴に残りやすいので非推奨）
+
+リポジトリでは **`upload-songdata-github-release.secrets.txt`** と **`upload-songdata-github-release.local.ps1`** は **`.gitignore`** 済みです。
+
+### タグ名
+
+- **引数を省略**した場合、タグは自動で **`songdata-YYYY-MM-DD`**（実行日の日付）になります。
+- **固定タグ**にしたい場合は第 1 引数または `-Tag` で指定します（Actions の **`SONGDATA_RELEASE_TAG`** と一致させてください）。
+
+```bat
+upload-songdata-github-release.bat
+upload-songdata-github-release.bat songdata-latest
+```
+
+### 例（`songdata.db` があるフォルダにコピーした場合）
+
+```bat
+cd /d F:\path\to\folder-with-songdata
+copy \\path\to\repo\scripts\upload-songdata-github-release.bat .
+copy \\path\to\repo\scripts\upload-songdata-github-release.ps1 .
+copy \\path\to\repo\scripts\upload-songdata-github-release.secrets.txt.example upload-songdata-github-release.secrets.txt
+rem Edit secrets txt: line 1 = token, line 2 = owner/repo
+upload-songdata-github-release.bat
+```
+
+### 例（リポジトリの `scripts` から実行する場合）
 
 ```bat
 cd C:\path\to\this-repo
-copy scripts\upload-songdata-github-release.local.ps1.example scripts\upload-songdata-github-release.local.ps1
-rem Edit local.ps1: set GITHUB_TOKEN and GITHUB_REPOSITORY, then:
-scripts\upload-songdata-github-release.bat songdata-2026-05-26
+copy scripts\upload-songdata-github-release.secrets.txt.example scripts\upload-songdata-github-release.secrets.txt
+rem Edit secrets txt, then:
+scripts\upload-songdata-github-release.bat
 ```
 
-既定のローカルファイルは **`data/songdata.db`** です。別パスにする場合は `-SongdataPath` を指定します。
+別パスのアップロード元を指定する例:
 
 ```bat
-scripts\upload-songdata-github-release.bat songdata-2026-05-26 -SongdataPath D:\beatoraja\songdata.db
+scripts\upload-songdata-github-release.bat -SongdataPath D:\beatoraja\songdata.db
 ```
 
-- 指定タグの **Release が無い場合は新規作成**します（タグがリモートに無い場合は GitHub が既定ブランチ先に lightweight タグを作る挙動になります。通常は先に `git tag` / `git push origin <tag>` 済みにしてください）
+- 指定タグの **Release が無い場合は新規作成**します。リモートにタグが無い場合、API の `target_commitish` に **`main`** を渡します（既定ブランチが `master` などの場合は `-DefaultBranch master` を指定してください）。
 - **同名アセット `songdata.db` が既にある場合は削除してから再アップロード**します
 
 ## REST API でアップロード（バッチや `curl` 向け）
@@ -110,6 +154,6 @@ gh release download songdata-2026-05-26 -p songdata.db -O data/songdata.db --rep
 
 ## 注意
 
-- **タグ名とファイル名**を Actions 変数・ドキュメント・実際の Release で揃える
+- **タグ名とファイル名**を Actions 変数・ドキュメント・実際の Release で揃える（バッチはタグ省略時 **`songdata-YYYY-MM-DD`** を使うため、その日付のタグを **`SONGDATA_RELEASE_TAG`** に設定するか、`-Tag` で固定名にする）
 - **100MB 以上**の単一アセットは GitHub の制限に抵触するため、その場合はオブジェクトストレージ（S3 互換など）を検討してください
 - Release を消すと **そのタグに紐づくダウンロード URL も無効**になります。長期運用するならタグの命名規則を決め、**上書き用の別タグ**にするか、履歴として残すかを決めてください

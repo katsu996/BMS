@@ -17,13 +17,14 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
 
 ### 2. `songdata.db` を更新して配布する（更新のたび）
 
-本リポジトリでは **`songdata.db` は Git に含めません**（サイズ制限の回避）。手元の **`data/songdata.db`** に置いたうえで、**GitHub Releases のアセット**として公開します。
+本リポジトリでは **`songdata.db` は Git に含めません**（サイズ制限の回避）。**GitHub Releases のアセット**として公開し、必要なら Actions 用の変数で取得します。
 
-1. PC の beatoraja データフォルダから **`songdata.db`** をコピーし、本リポジトリの **`data/songdata.db`** に置く（パスをずらさない）
-2. **Release へアップロード**（いずれか）
-   - **Windows:** [docs/github-releases-songdata.md](docs/github-releases-songdata.md) のとおり、`scripts/upload-songdata-github-release.local.ps1` にトークン等を書いてから `scripts/upload-songdata-github-release.bat` を実行（内部で GitHub REST API を使用）
+1. **Release へアップロード**（いずれか）
+   - **Windows（推奨）:** `songdata.db` があるフォルダに、`scripts/upload-songdata-github-release.bat` と同梱の `.ps1` をコピーし、**同じフォルダ**に認証用の **`upload-songdata-github-release.secrets.txt`**（例は `scripts/upload-songdata-github-release.secrets.txt.example`）を置いてから `.bat` をダブルクリックまたは実行します。タグは省略すると **`songdata-当日日付`** が自動で使われます。詳細は [docs/github-releases-songdata.md](docs/github-releases-songdata.md)。
    - **GitHub CLI:** 同ドキュメントの `gh release create` / `gh release upload` の例
-3. **GitHub Actions** でフィルタに使うタグ名を、リポジトリ変数 **`SONGDATA_RELEASE_TAG`**（例: `songdata-2026-05-26`）に設定する（**Settings → Secrets and variables → Actions → Variables**）。`.github/workflows/pages.yml` がチェックアウト直後にその Release から `data/songdata.db` を取得します。
+2. **GitHub Actions** でフィルタに使うタグ名を、リポジトリ変数 **`SONGDATA_RELEASE_TAG`** に設定する（**Settings → Secrets and variables → Actions → Variables**）。アップロード時にコンソールへ表示されるタグと揃えてください。`.github/workflows/pages.yml` がチェックアウト直後にその Release から `data/songdata.db` を取得します。
+
+ローカルでリポジトリの `tools/table-filter` を動かすだけなら、従来どおり **`data/songdata.db`** にファイルを置けば足ります（Release アップロードは不要な場合もあります）。
 
 詳細・トークン権限・`curl` の例は [docs/github-releases-songdata.md](docs/github-releases-songdata.md) を参照してください。
 
