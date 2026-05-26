@@ -42,7 +42,7 @@
 
 ## バックログ（未着手・任意）
 
-着手したら **優先度を見直し**、完了したら **行を削除または完了済みへ移動**してください。
+着手したら **優先度を見直し**、完了したら **行を削除**してください。
 
 | Todo No | 優先度 | 内容 |
 |---------|--------|------|
@@ -56,20 +56,3 @@
 | **T015** | **P3** | GitHub Pages の「並び替え・絞り込み・列の表示」パネルの開閉状態を `sessionStorage` に保存し、再訪問時に復元する。 |
 | **T018** | **P3** | **CSV エクスポート**: 表示中の行をダウンロードできる UI を検討する。 |
 | **T024** | **P3** | **i18n**: 文言の外部化や英語切替の可否を検討する（工数とメンテコストのトレードオフ）。 |
-
----
-
-## 完了済み（参照用・番号は再利用しない）
-
-| Todo No | メモ |
-|---------|------|
-| **T016** | `docs/table/index.html` を追加し、`docs/README.md` に案内リンク（生成物・beatoraja 注意、`docs/README.md` との役割分担）。 |
-| **T026** | `upload-songdata-github-release.ps1`: `Invoke-GitHubAuthorized` で 401 処理を集約、`.NOTES` と `github-releases-songdata.md` に 5.1/7+ 互換の説明。 |
-| **T027** | `tools/table-filter/tests/test_filter_build_pages_contract.py`: 最小 `filtered_data` + `build_pages_table` → `validate_browser_rows`。 |
-| **T029** | `docs/frontend-migration-costs.md` にバンドル・型付け・中間案の表と「静的維持」の判断目安を追記。 |
-
----
-
-## 完了したら
-
-新規バックログには **Todo No** と **優先度** を付与し、完了時は **いつ・どの PR で**終わったかを一行残すと、後任が迷いません。
