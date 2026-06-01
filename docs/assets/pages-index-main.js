@@ -702,14 +702,14 @@
           refresh();
         });
         entries.forEach(function (e) {
-          sourceFilterState[e.key] = true;
+          sourceFilterState[e.short] = true;
           var lab = document.createElement("label");
           var inp = document.createElement("input");
           inp.type = "checkbox";
           inp.checked = true;
-          inp.dataset.short = e.key;
+          inp.dataset.short = e.short;
           inp.addEventListener("change", function () {
-            sourceFilterState[e.key] = inp.checked;
+            sourceFilterState[e.short] = inp.checked;
             currentPage = 1;
             refresh();
           });

@@ -114,6 +114,19 @@ beatoraja は多くの場合 **ヘッダー JSON の URL**（`…/table/filtered
 
 **統合難易度表別の曲数:** `filter_table.py` が出力する **`level_stats.json`** を **`level-stats.html`** が読みます（トップの `index.html` は一覧のみ）。元表ごとのカードは `level_field`（既定は設定の `custom_level_source_key`＝`level`）で **SQL 前後**の件数比較を表示します。あわせて **`merged_table`** に統合・重複除去後の当難易度表の行数と、**独自レベル**（`custom_level_field`）別の曲数を載せ、`level-stats.html` 冒頭にカードとして表示します。フィルタがスキップされたビルドでは `level_stats.json` が無く、当該ページはエラー表示になり得ます。
 
+### beatoraja の K フォルダ件数と Web 集計が食い違うとき
+
+| 見ている場所 | 数え方 | beatoraja の K1 などと一致するか |
+|--------------|--------|----------------------------------|
+| beatoraja 選曲画面の K フォルダ | `filtered_data.json` の **`level`**（`custom_level` を写したあと）・**ハッシュ重複除去後** | **基準** |
+| `level-stats.html` 統合カード「**beatoraja・重複除去後**」 | 上と同じ（`merged_table.custom_level_rows[].count`） | **一致** |
+| 同カード「**重複除去前**」 | マージ前の全ソース合算（同一譜面が複数表に載っていた分を含む） | **一致しない**（多くなる） |
+| 下段の各元表カード「SQL 後」 | その表だけ・**元表の `level` 表記**・マージ前 | **一致しない** |
+
+例（2026-06 時点の CI 出力）: 独自レベル K1 は **重複除去前 112** / **beatoraja 106**。K15 は **3 / 3**。Web で「112, 182, 210」と見えているのに beatoraja が「106, 179, 206」なら、**重複除去前の列と比較している**可能性が高いです。beatoraja 側がさらに大きい数（例: K1=163）のときは、(1) **Table URL が古い `filtered_header.json` のまま**、(2) **`filtered_data_enriched.json` を誤登録**して `level` が元表のまま残っている、(3) **`beatoraja_level_from_custom_level: false`** でビルドした、を確認してください。
+
+**トップ（`index.html`）で 0 行:** `browser_rows.json` 未取得・フィルタスキップに加え、URL の **`?src=`**（元表フィルタ全オフ）や **`?cl=`**（独自レベル全オフ）でも 0 行になります。ソースフィルタのチェックが効かない不具合（`sourceFilterState` のキー誤り）でも全行が落ちることがあります。
+
 ## 独自レベル（`custom_level_mapping`）
 
 **目的:** 難易度表 A の「レベル 12」と難易度表 B の「レベル 1」を、**同じ独自スケール上の数値（またはラベル）**に揃えたい場合に使います。
