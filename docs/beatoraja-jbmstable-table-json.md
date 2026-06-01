@@ -16,6 +16,7 @@
 1. **`name` が空**だと `TableData.validate()` が失敗する。`output_header_name` で補完する。
 2. **`course` が空配列 `[]`** のとき、パーサが例外になるため **キーごと削除**する。
 3. **`tag`**（難易度フォルダ名の接頭辞）を変えたいときは **`beatoraja_folder_tag`** で上書きできる（未設定なら元ヘッダーの `tag` のまま）。
+4. **`level_order`** は beatoraja 向け出力の **最終データ行の `level` 一覧**から再生成する。マージ後に `custom_level` を `level` に写すと元ヘッダーの `level_order`（例: 1〜13）が古いままになり、**K14 以降のフォルダが選曲画面に出ない**ため。
 
 ## 運用メモ
 
