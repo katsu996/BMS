@@ -9,6 +9,7 @@
 3. **`main` へ push** するか **Deploy GitHub Pages** を手動実行すると、ワークフローが **Latest から毎回** `songdata.db` を取得します。
 4. Windows でアップロードする場合は **`scripts/upload-songdata-github-release.bat` / `.ps1` / `upload-songdata-github-release.secrets.txt`** を `songdata.db` と同じフォルダへコピーし、**`secrets.txt` の 1 行目に PAT、2 行目に `owner/repo`** を書きます（**リネーム不要**。リポジトリの `scripts/` に同梱の `secrets.txt` はプレースホルダ入りなので、そのまま編集しても構いません）。**本物の PAT を入れた状態の `secrets.txt` を `git commit` しないでください。** 書き方は下記「`secrets.txt` の書き方」（**UTF-8**）を参照してください。
 5. CI の全体像は **[ci-github-pages-workflow.md](./ci-github-pages-workflow.md)**、フィルタの挙動は **[github-actions-songdata-table-filter.md](./github-actions-songdata-table-filter.md)** を参照。
+6. **beatoraja の難易度表フォルダ SONG COUNT** と選曲件数を揃えるため、Release 用 `songdata.db` はアップロード前に `python3 tools/table-filter/songdata_dedupe.py --db songdata.db` で **sha256 重複を整理**することを推奨します（CI でも取得直後に同処理を実行）。
 
 以下、制限・CLI・REST API・トラブルシュートの詳細です。GitHub の Web からのファイル追加は **100MB 未満**の制限があります（[Adding a file to a repository](https://docs.github.com/en/repositories/working-with-files/managing-files/adding-a-file-to-a-repository)）。Release アセットも同様に **100MB 未満**である必要があります。25MB 超で「コンソールからのコミット」が困難な場合でも、**API や GitHub CLI でのアップロード**なら同じ枠内であれば問題なく運用できます。
 

@@ -42,6 +42,7 @@ EXPECTED_KEYS: frozenset[str] = frozenset(
         "beatoraja_folder_tag",
         "beatoraja_level_from_custom_level",
         "beatoraja_empty_rows_policy",
+        "dedupe_songdata",
         "http_fetch_timeout_seconds",
         "http_fetch_retries",
         "http_fetch_backoff_seconds",

@@ -35,6 +35,7 @@ from level_stats import (
     merge_level_compare_rows,
     sort_level_stat_keys,
 )
+from songdata_dedupe import dedupe_songdata_db, lookup_counts_by_level
 from source_tables import (
     effective_custom_level_maps,
     extract_source_table_entries,
@@ -486,6 +487,27 @@ def main() -> None:
             raise SystemExit(0)
         _die(f"songdata.db が見つかりません: {songdata}")
 
+    dedupe_db = cfg.get("dedupe_songdata")
+    if dedupe_db is None:
+        dedupe_db = os.environ.get("FILTER_DEDUPE_SONGDATA", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        )
+    elif not isinstance(dedupe_db, bool):
+        dedupe_db = str(dedupe_db).strip().lower() in ("1", "true", "yes", "on")
+    if dedupe_db:
+        rep = dedupe_songdata_db(songdata)
+        if rep.rows_removed:
+            print(
+                f"songdata.db: sha256 重複 {rep.duplicate_sha256_groups} グループ、"
+                f"{rep.rows_removed} 行を除去しました（{rep.rows_before} → {rep.rows_after}）。"
+                " beatoraja フォルダの SONG COUNT と選曲件数が一致しやすくなります。",
+            )
+        else:
+            print("songdata.db: sha256 重複はありません（dedupe スキップ）。")
+
     sql_where = resolve_sql_where(cfg)
     strict_id = not bool(cfg.get("sql_where_disable_identifier_whitelist"))
     md5s, sha256s = _query_allowed_hashes(songdata, sql_where, strict_identifiers=strict_id)
@@ -701,6 +723,22 @@ def main() -> None:
         source_stats=per_source_level_stats,
         rows_before_dedup=pre_dedup_rows,
     )
+    lookup_by_level = lookup_counts_by_level(beatoraja_rows, songdata, level_field="level")
+    for row in merged_custom_level_rows:
+        lv = str(row.get("level", "")).strip()
+        lk = lookup_by_level.get(lv)
+        if lk is None:
+            continue
+        row["songdata_lookup_count"] = lk.lookup_rows
+        if lk.lookup_rows != lk.unique_sha256:
+            extra = lk.lookup_rows - lk.unique_sha256
+            print(
+                f"警告: K{lv} は難易度表 {row.get('count')} 曲だが、"
+                f"songdata.db 照合は {lk.lookup_rows} 行（+{extra}）。"
+                " beatoraja のフォルダ SONG COUNT が選曲件数より多く見えます。"
+                " songdata.db の sha256 重複除去（dedupe_songdata / songdata_dedupe.py）を検討してください。",
+                file=sys.stderr,
+            )
 
     if not beatoraja_rows:
         print(
