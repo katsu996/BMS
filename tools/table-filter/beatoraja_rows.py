@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Mapping, MutableMapping
+from typing import Any, Mapping, MutableMapping, Sequence
 
+from level_stats import sort_level_stat_keys
 from sql_where_guard import die
 
 # jbmstable-parser の decodeJSONTableData(..., accept=false) に合わせ、
@@ -77,6 +78,29 @@ def row_passes_beatoraja_strict_decoder(row: Mapping[str, Any]) -> bool:
     md5_ok = md5 is not None and len(str(md5).strip()) > 24
     sha_ok = sha is not None and len(str(sha).strip()) > 24
     return md5_ok or sha_ok
+
+
+def sync_header_level_order_from_beatoraja_rows(
+    header: MutableMapping[str, Any],
+    rows: Sequence[Mapping[str, Any]],
+) -> None:
+    """
+    beatoraja / jbmstable-parser は header の level_order で難易度フォルダを作る。
+    マージ後に行の level が変わっていると元ヘッダーの level_order が古いままになり、
+    データに存在する上位レベル（例: K31）が選曲画面に出ない。
+    """
+    levels: set[str] = set()
+    for row in rows:
+        lv = row.get("level")
+        if lv is None:
+            continue
+        s = str(lv).strip()
+        if s:
+            levels.add(s)
+    if not levels:
+        header.pop("level_order", None)
+        return
+    header["level_order"] = sort_level_stat_keys(list(levels))
 
 
 def sanitize_header_for_beatoraja(header: MutableMapping[str, Any], cfg: Mapping[str, Any]) -> None:

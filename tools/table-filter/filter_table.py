@@ -25,6 +25,7 @@ from beatoraja_rows import (
     sanitize_chart_row_for_beatoraja,
     sanitize_header_for_beatoraja,
     strip_keys_cfg,
+    sync_header_level_order_from_beatoraja_rows,
     validate_json_field_name,
 )
 from http_fetch import fetch_bytes
@@ -664,6 +665,8 @@ def main() -> None:
         )
         if os.environ.get("GITHUB_ACTIONS") == "true":
             print("::error title=難易度表フィルタ::beatoraja 向けデータ行が 0 件です", file=sys.stderr)
+    else:
+        sync_header_level_order_from_beatoraja_rows(new_header, beatoraja_rows)
 
     policy_fail = _empty_rows_policy_fail(cfg)
     if not beatoraja_rows and policy_fail:

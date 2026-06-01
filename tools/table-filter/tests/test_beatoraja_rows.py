@@ -9,6 +9,7 @@ from beatoraja_rows import (
     sanitize_chart_row_for_beatoraja,
     sanitize_header_for_beatoraja,
     strip_keys_cfg,
+    sync_header_level_order_from_beatoraja_rows,
 )
 
 
@@ -59,6 +60,23 @@ class TestBeatorajaRows(unittest.TestCase):
         apply_beatoraja_custom_level_to_level(row, {"beatoraja_level_from_custom_level": False})
         self.assertEqual(row["level"], "12")
         self.assertNotIn("custom_level", row)
+
+    def test_sync_level_order_from_rows(self) -> None:
+        h: dict = {"level_order": ["1", "2", "3"]}
+        rows = [{"level": "13"}, {"level": "31"}, {"level": "1"}]
+        sync_header_level_order_from_beatoraja_rows(h, rows)
+        self.assertEqual(h["level_order"], ["1", "13", "31"])
+
+    def test_sync_level_order_replaces_stale_header(self) -> None:
+        h = {"level_order": [str(i) for i in range(1, 14)]}
+        rows = [{"level": str(i)} for i in (1, 13, 31)]
+        sync_header_level_order_from_beatoraja_rows(h, rows)
+        self.assertEqual(h["level_order"], ["1", "13", "31"])
+
+    def test_sync_level_order_empty_rows_removes_key(self) -> None:
+        h = {"level_order": ["1", "2"]}
+        sync_header_level_order_from_beatoraja_rows(h, [])
+        self.assertNotIn("level_order", h)
 
 
 if __name__ == "__main__":
