@@ -108,6 +108,11 @@
         }
         subM.textContent = partsM.join(" / ");
         cardM.appendChild(subM);
+        var noteM = document.createElement("p");
+        noteM.className = "level-stats-sub";
+        noteM.textContent =
+          "beatoraja の K フォルダ件数は下表の「beatoraja・重複除去後」列と一致します。「重複除去前」はマージ時に同一譜面が複数表に載っていた分を含むため、beatoraja より多くなります。";
+        cardM.appendChild(noteM);
         var rowsCl = Array.isArray(mt.custom_level_rows) ? mt.custom_level_rows : [];
         var srcCols = Array.isArray(mt.source_columns) ? mt.source_columns : [];
         if (rowsCl.length) {
@@ -121,7 +126,7 @@
           var thCntBefore = document.createElement("th");
           thCntBefore.textContent = "曲数（重複除去前）";
           var thCnt = document.createElement("th");
-          thCnt.textContent = "曲数";
+          thCnt.textContent = "曲数（beatoraja・重複除去後）";
           trhM.appendChild(thLa);
           trhM.appendChild(thCntBefore);
           trhM.appendChild(thCnt);
