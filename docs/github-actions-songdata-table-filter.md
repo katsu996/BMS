@@ -43,7 +43,7 @@
 3. ヘッダーの **`data_url`** を取得（相対ならヘッダー URL に `urljoin`）。単一ソースかつ **`source_data_url`** があればそちらを優先。
 4. データ配列の各行について **`md5` / `sha256`** が許可集合に含まれる行だけ残す。
 5. 各ソースについて、**元表データの全行**をレベル列でバケット化した件数（SQL 条件前）と、**フィルタ通過行**について同様の集計（SQL 条件後）を作り、**重複マージより前**の意味で `level_stats.json` の `sources` に書き留める（`level_rows` で同一レベル行に前後件数を並べる。単一ヘッダーでも同様）。
-6. **複数ヘッダー**のときは、通過行を **`md5` / `sha256` で重複除去**して 1 本のデータ配列にマージ。`course` は各ヘッダー由来を **配列として連結**。合成ヘッダーは **先頭ヘッダーをベース**にし、`data_url` は既定で **`filtered_data.json` などファイル名のみ**（ヘッダーと同じ公開ディレクトリ上のデータを指す）。
+6. **複数ヘッダー**のときは、通過行を **譜面キー（`md5` があれば `md5:`、無ければ `sha256:`）で重複除去**して 1 本のデータ配列にマージ。同一 `md5` で `sha256` の有無だけが違う行も 1 行にまとめる（beatoraja は `md5` 単位で 1 譜面として扱うため）。衝突時は **`custom_level` が高い行**のチャート内容（`level`・`title`・`sha256` 等）を採用し、`source_table_names` / `source_table_short_names` は全出自を追記する。`course` は各ヘッダー由来を **配列として連結**。合成ヘッダーは **先頭ヘッダーをベース**にし、`data_url` は既定で **`filtered_data.json` などファイル名のみ**（ヘッダーと同じ公開ディレクトリ上のデータを指す）。
 7. マージ時、データ行の各オブジェクトに **出自の難易度表**を示すフィールドを付与する（下記「出自」節）。
 8. **各ソースの `custom_level_mapping`**（または後方互換のトップレベル **`custom_level_mapping` 配列**）が設定されているときは、**新規に採用した行**（ハッシュありで `row_by_key` に初めて入る行、およびハッシュなしの行）について、**そのループの元ヘッダーインデックス**に対応するマップで、元のレベル列（既定: `level`）を引き、**`custom_level` 列（名前は `custom_level_field`）**に書き込む（下記「独自レベル」節）。
 
@@ -70,13 +70,13 @@ beatoraja は多くの場合 **ヘッダー JSON の URL**（`…/table/filtered
 
 | キー | 型 | 意味 |
 |------|-----|------|
-| `source_table_index` | 整数 | **`source_tables`（または `source_header_urls`）の並び**で見たときの表番号（**1 始まり**）。同一譜面が複数表に載っている場合は、**先にマージされた表**（重複除去で採用された側）の番号が残ります。 |
+| `source_table_index` | 整数 | **`source_tables`（または `source_header_urls`）の並び**で見たときの表番号（**1 始まり**）。同一譜面が複数表に載っている場合は、**`custom_level` が最も高い行**を採用したときの表番号が残ります。 |
 | `source_table_short_names` | 文字列の配列 | 設定の略称（`source_tables[].short_name` または後方互換の `source_table_short_names[i]`）が非空ならその略称（例: `sl`）。無ければ **空配列**になり得ます。複数表に同一譜面があると **`source_table_names` と同様に**後続の略称を追記します。 |
 | `source_table_names` | 文字列の配列 | 設定の **`display_name`**（または後方互換の `source_table_display_names[i]`）が非空ならそれを、無ければ各ヘッダー JSON の `name` / `Name` / `title` / `Title`（なければ `表 N`）から得た **表示名**。複数表に同一譜面があると **複数要素**になります。 |
 | `source_table_register_url` | 文字列（任意） | 設定に書いた **登録用 URL**（例: `table_rec.html`）。`source_tables[].header_url` または `source_header_urls` の同じインデックスの値。 |
 | `source_header_json_url` | 文字列 | 実際に取得した **ヘッダー JSON の HTTPS URL**（HTML から `bmstable` で解決した後の URL）。 |
 
-**重複譜面:** `md5` / `sha256` が同じ行は **1 行にまとめ**、`source_table_names` と `source_table_short_names` にだけ後続の表の表示名・略称を追記します。`source_table_index` は更新しません（先勝ち）。
+**重複譜面:** 同一譜面（**`md5` が一致**、または `md5` が無く **`sha256` のみ一致**）は **1 行にまとめ**、`source_table_names` と `source_table_short_names` に後続の表の表示名・略称を追記します。チャート内容は **`custom_level` が高い行**を優先します（beatoraja の K フォルダと Web の独自レベル件数のずれを防ぐため）。`source_table_index` は採用行に合わせて更新されます。
 
 **GitHub Pages の `index.html`:** 列が煩雑にならないよう、`source_header_json_url` と `source_table_register_url` は **画面上は非表示**にしていますが、**`filtered_data_enriched.json`**（および `browser_rows.json` の `table`）には残ります。**`url` / `url_diff`** も Pages の表では既定でオフ（列表示のチェックボックスでオンにできる）です。**beatoraja が読む `filtered_data.json`** からは出自列を除き、元表の `url` / `url_diff` はそのまま残します。**シンボル**（`source_table_short_names`）と**出自（フル）**は別列です。**表 ID**・**出自表（番号）**・**出自（フル）**・**フォルダID**（`song.folder`）も既定でオフです。
 
@@ -136,7 +136,7 @@ beatoraja は多くの場合 **ヘッダー JSON の URL**（`…/table/filtered
 - **`custom_level_field`:** 出力 JSON に載せるキー名（既定 `custom_level`）。英字または `_` で始まり英数字と `_` のみ。
 - **`custom_level_source_key`:** 元表の行から読むレベル列名（既定 `level`）。
 - **`custom_level_unmapped`:** マップにキーが無かったとき。`omit`（既定） / `source` または `original` / `null`。
-- **重複行:** 複数ソースで同一ハッシュが出た場合は **先勝ち**のソースインデックスだけがマップに使われます（2 枚目以降は `source_table_names` / `source_table_short_names` にだけ表名・略称が足され、`custom_level` は上書きしません）。
+- **重複行:** 複数ソースで同一譜面（`md5` 一致など）が出た場合、マージ後の行は **`custom_level` が高い側**のチャート内容を採用します（`source_table_names` / `source_table_short_names` は全出自を追記）。
 - **`course` 内のチャート行**には現状マップを適用していません（データ配列のメイン行のみ）。
 - **既定の K Original 対応表:** [`tools/table-filter/config/source_tables.json`](../tools/table-filter/config/source_tables.json) の各ソースに **`custom_level_mapping`** を入れており、☆（通常）・▽（第2通常）・sr（Starlight）・sl（Satellite）の **元表 `level` 文字列**を、運用上の **統合スケール 1〜31** に寄せています。表記ゆれ対策で ☆ 表には **`"☆12"` のように記号付きキー**も重ねてあります。Satellite の **`0`〜`12`** は表の後半ブロック（`sl0`〜`sl12` に相当する帯）を優先したマッピングです。行ごとの解釈を変えたい場合は同ファイルを編集してコミットしてください。
 

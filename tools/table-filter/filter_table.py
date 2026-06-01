@@ -144,17 +144,61 @@ def _merge_course_parts(parts: list[Any]) -> Any:
 
 
 def _row_dedupe_key(row: Mapping[str, Any]) -> str | None:
-    sha = row.get("sha256")
+    """譜面の重複除去キー。beatoraja は md5 で同一譜面を扱うため、md5 があれば常に md5 を使う。"""
     md5 = row.get("md5")
-    if sha:
-        s = str(sha).strip().lower()
-        if re.fullmatch(r"[0-9a-f]{64}", s):
-            return "sha256:" + s
     if md5:
         m = str(md5).strip().lower()
         if re.fullmatch(r"[0-9a-f]{32}", m):
             return "md5:" + m
+    sha = row.get("sha256")
+    if sha:
+        s = str(sha).strip().lower()
+        if re.fullmatch(r"[0-9a-f]{64}", s):
+            return "sha256:" + s
     return None
+
+
+def _custom_level_numeric(row: Mapping[str, Any], custom_level_field: str) -> float | None:
+    raw = row.get(custom_level_field)
+    if raw is None or isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return float(raw)
+    if isinstance(raw, float):
+        return raw
+    s = str(raw).strip()
+    if not s:
+        return None
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def _should_replace_merged_row_by_custom_level(
+    prev: Mapping[str, Any],
+    new_row: Mapping[str, Any],
+    custom_level_field: str,
+) -> bool:
+    prev_cl = _custom_level_numeric(prev, custom_level_field)
+    new_cl = _custom_level_numeric(new_row, custom_level_field)
+    if new_cl is None:
+        return False
+    if prev_cl is None:
+        return True
+    return new_cl > prev_cl
+
+
+def _replace_merged_row_keep_source_metadata(
+    prev: MutableMapping[str, Any],
+    new_row: Mapping[str, Any],
+) -> None:
+    names = list(prev.get("source_table_names") or [])
+    shorts = list(prev.get("source_table_short_names") or [])
+    prev.clear()
+    prev.update(dict(new_row))
+    prev["source_table_names"] = names
+    prev["source_table_short_names"] = shorts
 
 
 def _query_allowed_hashes(db_path: str, sql_where: str, *, strict_identifiers: bool) -> tuple[set[str], set[str]]:
@@ -455,6 +499,7 @@ def main() -> None:
     total_in = 0
     total_filtered = 0
     level_field = str(cfg.get("custom_level_source_key") or "level").strip() or "level"
+    cl_field = str(cfg.get("custom_level_field") or "custom_level").strip() or "custom_level"
     per_source_level_stats: list[dict[str, Any]] = []
 
     if (cfg.get("source_data_url") or "").strip() and multi_source:
@@ -580,6 +625,8 @@ def main() -> None:
                     prev["source_table_short_names"] = shorts
                 if short_label and short_label not in shorts:
                     shorts.append(short_label)
+                if _should_replace_merged_row_by_custom_level(prev, new_row, cl_field):
+                    _replace_merged_row_keep_source_metadata(prev, new_row)
                 continue
 
             new_row["source_table_index"] = idx + 1
