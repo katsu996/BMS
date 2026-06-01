@@ -18,6 +18,14 @@
 3. **`tag`**（難易度フォルダ名の接頭辞）を変えたいときは **`beatoraja_folder_tag`** で上書きできる（未設定なら元ヘッダーの `tag` のまま）。
 4. **`level_order`** は beatoraja 向け出力の **最終データ行の `level` 一覧**から再生成する。マージ後に `custom_level` を `level` に写すと元ヘッダーの `level_order`（例: 1〜13）が古いままになり、**K14 以降のフォルダが選曲画面に出ない**ため。
 
+## beatoraja のフォルダ「SONG COUNT」と選曲件数
+
+- スキンの **`NUMBER_FOLDER_TOTALSONGS`（ref 300）** は、フォルダ内の **`getSongDatas()` 結果の行数**（クリアランプ集計の合計）です。
+- フォルダを開いたときの曲リストは **`SongBar.toSongBarArray()`** が **`sha256` で重複除去**した件数です。
+- そのため **`songdata.db` の `song` 表に同一 `sha256` の行が複数**（同じ譜面を別フォルダに二重登録など）あると、**SONG COUNT だけが選曲件数・Web の重複除去後より大きく**見えます。難易度表 JSON の行数が正しくても起こり得ます。
+- 本リポジトリの CI では Release 取得直後に [`tools/table-filter/songdata_dedupe.py`](../tools/table-filter/songdata_dedupe.py) で **sha256 重複を 1 行にまとめてから** `filter_table.py` を実行します。ローカルでも同様に `python3 tools/table-filter/songdata_dedupe.py --db songdata.db` を実行するか、設定 **`dedupe_songdata`: true**（または環境変数 **`FILTER_DEDUPE_SONGDATA=1`**）を付けてください。
+- `level_stats.json` の `merged_table.custom_level_rows[]` に **`songdata_lookup_count`**（SONG COUNT 相当）が載ります。`count`（重複除去後の表行数）と異なるレベルは、実行ログに警告が出ます。
+
 ## 運用メモ
 
 - **0 件の `filtered_data.json`** は validate で必ず失敗する。CI では `beatoraja_empty_rows_policy: fail`（既定）と `smoke_check_outputs.py` で早期検知する。

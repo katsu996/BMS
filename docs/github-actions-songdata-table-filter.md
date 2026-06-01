@@ -118,12 +118,17 @@ beatoraja は多くの場合 **ヘッダー JSON の URL**（`…/table/filtered
 
 | 見ている場所 | 数え方 | beatoraja の K1 などと一致するか |
 |--------------|--------|----------------------------------|
-| beatoraja 選曲画面の K フォルダ | `filtered_data.json` の **`level`**（`custom_level` を写したあと）・**ハッシュ重複除去後** | **基準** |
+| beatoraja 選曲画面の K フォルダ（フォルダを開いたときの曲数） | `filtered_data.json` の **`level`**（`custom_level` を写したあと）・**ハッシュ重複除去後** | **基準** |
+| beatoraja フォルダ一覧の **SONG COUNT**（スキン ref 300） | `songdata.db` 照合行数（`level_stats` の **`songdata_lookup_count`**）。**`song` 表に同一 sha256 が複数あると表行数より増える** | **一致**（CI は `songdata_dedupe.py` 後） |
 | `level-stats.html` 統合カード「**beatoraja・重複除去後**」 | 上と同じ（`merged_table.custom_level_rows[].count`） | **一致** |
 | 同カード「**重複除去前**」 | マージ前の全ソース合算（同一譜面が複数表に載っていた分を含む） | **一致しない**（多くなる） |
 | 下段の各元表カード「SQL 後」 | その表だけ・**元表の `level` 表記**・マージ前 | **一致しない** |
 
-例（2026-06 時点の CI 出力）: 独自レベル K1 は **重複除去前 112** / **beatoraja 106**。K15 は **3 / 3**。Web で「112, 182, 210」と見えているのに beatoraja が「106, 179, 206」なら、**重複除去前の列と比較している**可能性が高いです。beatoraja 側がさらに大きい数（例: K1=163）のときは、(1) **Table URL が古い `filtered_header.json` のまま**、(2) **`filtered_data_enriched.json` を誤登録**して `level` が元表のまま残っている、(3) **`beatoraja_level_from_custom_level: false`** でビルドした、を確認してください。
+例（2026-06 時点の CI 出力）: 独自レベル K1 は **重複除去前 112** / **beatoraja 106**。K15 は **重複除去前 3** / **beatoraja 2**。Web で「112, 182, 210」と見えているのに beatoraja の**フォルダ内**が「106, 179, 206」なら、**重複除去前の列と比較している**可能性が高いです。
+
+**フォルダ内の曲数と一致するのに SONG COUNT だけ大きい**（例: K8 で SONG COUNT 53・選曲 33）ときは、難易度表 JSON ではなく **`songdata.db` に同一 `sha256` の重複行**がある状態です。beatoraja は選曲時だけ sha256 で潰しますが、SONG COUNT は DB ヒット行をそのまま数えます。対処: [`tools/table-filter/songdata_dedupe.py`](../tools/table-filter/songdata_dedupe.py) を実行するか、Release 用 DB をアップロードする前に重複を整理してください（CI では取得直後に自動実行）。
+
+beatoraja 側がさらに大きい数（例: K1=163）のときは、(1) **Table URL が古い `filtered_header.json` のまま**、(2) **`filtered_data_enriched.json` を誤登録**して `level` が元表のまま残っている、(3) **`beatoraja_level_from_custom_level: false`** でビルドした、を確認してください。
 
 **トップ（`index.html`）で 0 行:** `browser_rows.json` 未取得・フィルタスキップに加え、URL の **`?src=`**（元表フィルタ全オフ）や **`?cl=`**（独自レベル全オフ）でも 0 行になります。ソースフィルタのチェックが効かない不具合（`sourceFilterState` のキー誤り）でも全行が落ちることがあります。
 
