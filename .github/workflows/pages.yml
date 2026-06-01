@@ -42,9 +42,6 @@ jobs:
           gh release download -R "${{ github.repository }}" -p songdata.db -O songdata.db
           test -s songdata.db
 
-      - name: Dedupe songdata.db (sha256) for beatoraja SONG COUNT
-        run: python3 tools/table-filter/songdata_dedupe.py --db songdata.db
-
       - name: Workflow dispatch note
         if: github.event_name == 'workflow_dispatch'
         run: |

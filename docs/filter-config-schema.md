@@ -7,7 +7,6 @@
 | `enabled` | 任意 | `false` でフィルタ全体をスキップ |
 | `skip_if_no_songdata` | 任意 | `songdata.db` 不在時にスキップするか（**ローカル**向け既定 `true`。**GitHub Actions** では生成物が Git 管理外のため DB 無しはエラー。`FILTER_CI_ALLOW_MISSING_SONGDATA=1` でのみ従来どおりスキップ可） |
 | `songdata_db` | 任意 | DB パス（既定 `songdata.db`。リポジトリ直下からの相対、または絶対パス） |
-| `dedupe_songdata` | 任意 | `true` のとき `filter_table.py` 実行前に **`song` 表の同一 sha256 を 1 行に整理**（beatoraja フォルダ SONG COUNT と選曲件数のずれ防止）。未設定時は環境変数 **`FILTER_DEDUPE_SONGDATA=1`** で有効化。CI では `songdata_dedupe.py` を別ステップで実行 |
 | `beatoraja_empty_rows_policy` | 任意 | `fail`（既定）で beatoraja 向け 0 件時に `filter_table.py` が終了コード 1。`warn` / `allow` 等で緩和 |
 | `sql_where_preset` | 任意 | 非空なら固定プリセットのみ使用（`const_bpm` / `var_bpm`）。**設定時は `sql_where` は無視** |
 | `sql_where` | 条件付き | `sql_where_preset` 未使用時の `song` WHERE 断片 |

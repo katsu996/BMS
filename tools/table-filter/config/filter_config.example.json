@@ -3,8 +3,6 @@
   "enabled": true,
   "skip_if_no_songdata": true,
   "songdata_db": "songdata.db",
-  "dedupe_songdata": false,
-  "_dedupe_songdata_comment": "true のとき filter_table.py 実行前に song 表の同一 sha256 を 1 行に整理（beatoraja SONG COUNT ずれ防止）。CI では songdata_dedupe.py を別ステップで実行するため false で可。ローカル単体実行時は true または python3 tools/table-filter/songdata_dedupe.py --db songdata.db",
   "beatoraja_empty_rows_policy": "fail",
   "sql_where_preset": "",
   "sql_where": "minbpm IS NOT NULL AND maxbpm IS NOT NULL AND minbpm = maxbpm",
