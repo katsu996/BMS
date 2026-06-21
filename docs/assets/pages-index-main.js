@@ -349,12 +349,7 @@
   var mainContent = document.getElementById("main-content");
   if (mainContent) mainContent.setAttribute("aria-busy", "true");
 
-  fetch("./table/browser_rows.json", { cache: "no-store" })
-    .then(function (r) {
-      if (!r.ok) throw new Error("browser_rows.json を取得できません (" + r.status + ")");
-      return r.json();
-    })
-    .then(function (data) {
+  function _initPage(data) {
       if (loadStatus) loadStatus.hidden = true;
       if (reloadBtn) reloadBtn.hidden = true;
       if (mainContent) mainContent.setAttribute("aria-busy", "false");
@@ -1474,8 +1469,18 @@
         });
 
       scrollEl.hidden = false;
+    }
+
+
+  fetch("./table/browser_rows.json", { cache: "no-store" })
+    .then(function (r) {
+      if (!r.ok) throw new Error("browser_rows.json を取得できません (" + r.status + ")");
+      return r.json();
     })
-    .catch(function (e) {
+    .then(function (data) {
+      _initPage(data);
+    })
+.catch(function (e) {
       if (loadStatus) loadStatus.hidden = true;
       if (mainContent) mainContent.setAttribute("aria-busy", "false");
       if (errEl) {
