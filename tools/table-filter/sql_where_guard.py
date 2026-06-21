@@ -77,6 +77,11 @@ SQL_WHERE_PRESETS: dict[str, str] = {
 }
 
 _IDENT_RE = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
+_BANNED_WORD_RES: list[re.Pattern[str]] = [
+    re.compile(r"\b" + re.escape(w) + r"\b", re.IGNORECASE)
+    for w in ("attach", "detach", "pragma", "drop", "delete", "insert", "update", "create",
+              "replace", "trigger", "vacuum")
+]
 
 
 def die(msg: str, code: int = 1) -> None:
@@ -98,7 +103,7 @@ def resolve_sql_where(cfg: Mapping[str, Any]) -> str:
     return str(cfg.get("sql_where", "")).strip()
 
 
-def validate_sql_where(fragment: str, *, strict_identifiers: bool) -> None:
+def validate_sql_where(fragment: str) -> None:
     if not fragment or not fragment.strip():
         die("設定 sql_where（またはプリセット）が空です。例: minbpm IS NOT NULL AND maxbpm IS NOT NULL AND minbpm = maxbpm")
     frag = fragment.strip()
@@ -109,34 +114,19 @@ def validate_sql_where(fragment: str, *, strict_identifiers: bool) -> None:
     for b in banned_sub:
         if b in frag:
             die(f"sql_where に禁止部分 {b!r} が含まれています。")
-    banned_words = (
-        "attach",
-        "detach",
-        "pragma",
-        "sqlite_",
-        "drop ",
-        "delete ",
-        "insert ",
-        "update ",
-        "create ",
-        "replace ",
-        "trigger ",
-        "vacuum",
-    )
-    for w in banned_words:
-        if w in lower:
-            die(f"sql_where に禁止キーワードに該当する部分が含まれています: {w.strip()!r}")
+    if "sqlite_" in lower:
+        die("sql_where に禁止キーワードに該当する部分が含まれています: 'sqlite_'")
+    for pat in _BANNED_WORD_RES:
+        if pat.search(lower):
+            die(f"sql_where に禁止キーワードに該当する部分が含まれています: {pat.pattern!r}")
 
-    if strict_identifiers:
-        for m in _IDENT_RE.finditer(frag):
-            word = m.group(0).lower()
-            if word in SQL_EXPRESSION_KEYWORDS:
-                continue
-            if word in SONG_TABLE_COLUMNS:
-                continue
-            die(
-                f"sql_where に許可されていない識別子があります: {m.group(0)!r}。"
-                " song テーブルの列名と SQLite の式キーワード以外は使えません。"
-                " 高度な式が必要な場合は filter_config の sql_where_disable_identifier_whitelist を true にしてください"
-                "（自己責任・信頼できる設定のみコミットしてください）。"
-            )
+    for m in _IDENT_RE.finditer(frag):
+        word = m.group(0).lower()
+        if word in SQL_EXPRESSION_KEYWORDS:
+            continue
+        if word in SONG_TABLE_COLUMNS:
+            continue
+        die(
+            f"sql_where に許可されていない識別子があります: {m.group(0)!r}。"
+            " song テーブルの列名と SQLite の式キーワード以外は使えません。"
+        )

@@ -16,7 +16,7 @@ import re
 import sqlite3
 import sys
 from typing import Any, Mapping, MutableMapping, Sequence
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 from beatoraja_rows import (
     apply_beatoraja_custom_level_to_level,
@@ -201,12 +201,12 @@ def _replace_merged_row_keep_source_metadata(
     prev["source_table_short_names"] = shorts
 
 
-def _query_allowed_hashes(db_path: str, sql_where: str, *, strict_identifiers: bool) -> tuple[set[str], set[str]]:
-    validate_sql_where(sql_where, strict_identifiers=strict_identifiers)
+def _query_allowed_hashes(db_path: str, sql_where: str) -> tuple[set[str], set[str]]:
+    validate_sql_where(sql_where)
     md5s: set[str] = set()
     sha256s: set[str] = set()
     sql = f"SELECT DISTINCT md5, sha256 FROM song WHERE ({sql_where})"
-    con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    con = sqlite3.connect(f"file:{quote(db_path)}?mode=ro", uri=True)
     try:
         cur = con.cursor()
         cur.execute(sql)
@@ -487,8 +487,7 @@ def main() -> None:
         _die(f"songdata.db が見つかりません: {songdata}")
 
     sql_where = resolve_sql_where(cfg)
-    strict_id = not bool(cfg.get("sql_where_disable_identifier_whitelist"))
-    md5s, sha256s = _query_allowed_hashes(songdata, sql_where, strict_identifiers=strict_id)
+    md5s, sha256s = _query_allowed_hashes(songdata, sql_where)
     print(f"許可ハッシュ数: md5={len(md5s)}, sha256={len(sha256s)} (WHERE {sql_where!r})")
 
     merged_rows: list[dict[str, Any]] = []
@@ -659,9 +658,22 @@ def main() -> None:
     out_dir = cfg.get("output_dir", "docs/table")
     data_name = cfg.get("output_data_filename", "filtered_data.json")
     header_name = cfg.get("output_header_filename", "filtered_header.json")
-    os.makedirs(out_dir, exist_ok=True)
+    enriched_name = (
+        str(cfg.get("output_data_enriched_filename") or "filtered_data_enriched.json").strip()
+        or "filtered_data_enriched.json"
+    )
+    stats_name = str(cfg.get("output_level_stats_filename") or "level_stats.json").strip() or "level_stats.json"
     data_path = os.path.join(out_dir, data_name)
     header_path = os.path.join(out_dir, header_name)
+    enriched_path = os.path.join(out_dir, enriched_name)
+    stats_path = os.path.join(out_dir, stats_name)
+    all_paths = [data_path, header_path, enriched_path, stats_path]
+    seen = set()
+    for p in all_paths:
+        if p in seen:
+            _die(f"出力ファイル名が重複しています: {p}")
+        seen.add(p)
+    os.makedirs(out_dir, exist_ok=True)
 
     if use_relative_data_url:
         new_header["data_url"] = os.path.basename(data_name)
@@ -671,11 +683,6 @@ def main() -> None:
     sanitize_header_for_beatoraja(new_header, cfg)
 
     strip_keys = strip_keys_cfg(cfg)
-    enriched_name = (
-        str(cfg.get("output_data_enriched_filename") or "filtered_data_enriched.json").strip()
-        or "filtered_data_enriched.json"
-    )
-    enriched_path = os.path.join(out_dir, enriched_name)
     _save_json(enriched_path, filtered_data)
 
     dropped = 0
@@ -721,8 +728,6 @@ def main() -> None:
 
     _save_json(data_path, beatoraja_rows)
     _save_json(header_path, new_header)
-    stats_name = str(cfg.get("output_level_stats_filename") or "level_stats.json").strip() or "level_stats.json"
-    stats_path = os.path.join(out_dir, stats_name)
     stats_payload: dict[str, Any] = {
         "version": 2,
         "level_field": level_field,

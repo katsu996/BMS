@@ -14,6 +14,7 @@ import os
 import sqlite3
 import sys
 from typing import Any
+from urllib.parse import quote
 
 from pages_ui_json import load_pages_ui_config
 from source_tables import effective_custom_level_maps, load_resolved_filter_config, normalize_source_tables
@@ -125,7 +126,7 @@ def main() -> None:
     song_by_md5: dict[str, dict[str, Any]] = {}
 
     if os.path.isfile(songdata_path) and (md5s or shas):
-        con = sqlite3.connect(f"file:{songdata_path}?mode=ro", uri=True)
+        con = sqlite3.connect(f"file:{quote(songdata_path)}?mode=ro", uri=True)
         con.row_factory = sqlite3.Row
         try:
             cur = con.cursor()

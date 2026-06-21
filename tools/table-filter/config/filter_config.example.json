@@ -7,6 +7,7 @@
   "sql_where_preset": "",
   "sql_where": "minbpm IS NOT NULL AND maxbpm IS NOT NULL AND minbpm = maxbpm",
   "sql_where_disable_identifier_whitelist": false,
+  "_sql_where_disable_identifier_whitelist_deprecated": "このキーは非推奨です。識別子ホワイトリストは常に有効になりました。既存の設定は無視されます。",
   "source_tables_path": "source_tables.example.json",
   "_source_tables_path_comment": "難易度表ソース一覧を別 JSON に分離（filter_config と同じディレクトリ基準の相対パス）。空にして source_tables をインラインでも可。",
   "source_tables": [],

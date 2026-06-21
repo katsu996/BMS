@@ -20,15 +20,15 @@ class TestSqlWhereGuard(unittest.TestCase):
 
     def test_validate_bans_semicolon(self) -> None:
         with self.assertRaises(SystemExit):
-            validate_sql_where("md5 = md5;", strict_identifiers=False)
+            validate_sql_where("md5 = md5;")
 
-    def test_strict_identifier_whitelist(self) -> None:
-        validate_sql_where("minbpm IS NOT NULL AND maxbpm IS NOT NULL", strict_identifiers=True)
+    def test_identifier_whitelist(self) -> None:
+        validate_sql_where("minbpm IS NOT NULL AND maxbpm IS NOT NULL")
         with self.assertRaises(SystemExit):
-            validate_sql_where("evil_column = 1", strict_identifiers=True)
+            validate_sql_where("evil_column = 1")
 
-    def test_strict_allows_keywords(self) -> None:
-        validate_sql_where("minbpm IS NULL OR maxbpm IS NOT NULL", strict_identifiers=True)
+    def test_allows_keywords(self) -> None:
+        validate_sql_where("minbpm IS NULL OR maxbpm IS NOT NULL")
 
 
 if __name__ == "__main__":
