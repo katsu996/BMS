@@ -212,15 +212,11 @@
     return runtime.column_labels[k] || String(k);
   }
 
-  function dbColTitle(k, runtime) {
-    return runtime.column_labels[k] || String(k);
-  }
-
   global.KOriginalPagesIndex = {
     DEFAULT_INDEX_TABLE: DEFAULT_INDEX_TABLE,
     mergeIndexTable: mergeIndexTable,
     isTableClampKey: isTableClampKey,
     tableColTitle: tableColTitle,
-    dbColTitle: dbColTitle
+    dbColTitle: tableColTitle
   };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -554,6 +554,36 @@
       var customLevelFilterState = {};
       var customLevelOrderedKeys = [];
 
+      function _addBulkToggleButtons(
+        container, stateObj, orderedKeys, checkboxSelector, refreshCb
+      ) {
+        var bulk = document.createElement("div");
+        bulk.className = "filter-bulk-actions";
+        var bAll = document.createElement("button");
+        bAll.type = "button";
+        bAll.className = "shadcn-btn filter-bulk-btn";
+        bAll.textContent = "すべて選択";
+        var bNone = document.createElement("button");
+        bNone.type = "button";
+        bNone.className = "shadcn-btn filter-bulk-btn";
+        bNone.textContent = "すべて解除";
+        bulk.appendChild(bAll);
+        bulk.appendChild(bNone);
+        container.appendChild(bulk);
+        bAll.addEventListener("click", function () {
+          orderedKeys.forEach(function (k) { stateObj[k] = true; });
+          container.querySelectorAll(checkboxSelector).forEach(function (inp) { inp.checked = true; });
+          currentPage = 1;
+          refreshCb();
+        });
+        bNone.addEventListener("click", function () {
+          orderedKeys.forEach(function (k) { stateObj[k] = false; });
+          container.querySelectorAll(checkboxSelector).forEach(function (inp) { inp.checked = false; });
+          currentPage = 1;
+          refreshCb();
+        });
+      }
+
       function buildCustomLevelFilterBar() {
         customLevelFilterState = {};
         customLevelOrderedKeys = [];
@@ -580,39 +610,10 @@
         leadCl.textContent =
           "独自レベル（チェックした値の行だけ表示。すべてオフのときは行を表示しません）";
         filterCustomLevelBar.appendChild(leadCl);
-        var bulkCl = document.createElement("div");
-        bulkCl.className = "filter-bulk-actions";
-        var bAllCl = document.createElement("button");
-        bAllCl.type = "button";
-        bAllCl.className = "shadcn-btn filter-bulk-btn";
-        bAllCl.textContent = "すべて選択";
-        var bNoneCl = document.createElement("button");
-        bNoneCl.type = "button";
-        bNoneCl.className = "shadcn-btn filter-bulk-btn";
-        bNoneCl.textContent = "すべて解除";
-        bulkCl.appendChild(bAllCl);
-        bulkCl.appendChild(bNoneCl);
-        filterCustomLevelBar.appendChild(bulkCl);
-        bAllCl.addEventListener("click", function () {
-          for (var ai = 0; ai < customLevelOrderedKeys.length; ai++) {
-            customLevelFilterState[customLevelOrderedKeys[ai]] = true;
-          }
-          filterCustomLevelBar.querySelectorAll("input[type=checkbox][data-cl-key]").forEach(function (inp) {
-            inp.checked = true;
-          });
-          currentPage = 1;
-          refresh();
-        });
-        bNoneCl.addEventListener("click", function () {
-          for (var zi = 0; zi < customLevelOrderedKeys.length; zi++) {
-            customLevelFilterState[customLevelOrderedKeys[zi]] = false;
-          }
-          filterCustomLevelBar.querySelectorAll("input[type=checkbox][data-cl-key]").forEach(function (inp) {
-            inp.checked = false;
-          });
-          currentPage = 1;
-          refresh();
-        });
+        _addBulkToggleButtons(
+          filterCustomLevelBar, customLevelFilterState,
+          customLevelOrderedKeys, "input[type=checkbox][data-cl-key]", refresh
+        );
         keys.forEach(function (ck) {
           customLevelFilterState[ck] = true;
           var labCl = document.createElement("label");
@@ -668,39 +669,6 @@
         lead.className = "filter-src-lead";
         lead.textContent = "難易度表（1つ以上チェックした表のみ表示。すべてオフのときは行を表示しません）";
         filterSrcBar.appendChild(lead);
-        var bulkSrc = document.createElement("div");
-        bulkSrc.className = "filter-bulk-actions";
-        var bAllSrc = document.createElement("button");
-        bAllSrc.type = "button";
-        bAllSrc.className = "shadcn-btn filter-bulk-btn";
-        bAllSrc.textContent = "すべて選択";
-        var bNoneSrc = document.createElement("button");
-        bNoneSrc.type = "button";
-        bNoneSrc.className = "shadcn-btn filter-bulk-btn";
-        bNoneSrc.textContent = "すべて解除";
-        bulkSrc.appendChild(bAllSrc);
-        bulkSrc.appendChild(bNoneSrc);
-        filterSrcBar.appendChild(bulkSrc);
-        bAllSrc.addEventListener("click", function () {
-          Object.keys(sourceFilterState).forEach(function (k) {
-            sourceFilterState[k] = true;
-          });
-          filterSrcBar.querySelectorAll("input[type=checkbox][data-short]").forEach(function (inp) {
-            inp.checked = true;
-          });
-          currentPage = 1;
-          refresh();
-        });
-        bNoneSrc.addEventListener("click", function () {
-          Object.keys(sourceFilterState).forEach(function (k) {
-            sourceFilterState[k] = false;
-          });
-          filterSrcBar.querySelectorAll("input[type=checkbox][data-short]").forEach(function (inp) {
-            inp.checked = false;
-          });
-          currentPage = 1;
-          refresh();
-        });
         entries.forEach(function (e) {
           sourceFilterState[e.short] = true;
           var lab = document.createElement("label");
@@ -717,6 +685,10 @@
           lab.appendChild(document.createTextNode(e.label));
           filterSrcBar.appendChild(lab);
         });
+        _addBulkToggleButtons(
+          filterSrcBar, sourceFilterState,
+          Object.keys(sourceFilterState), "input[type=checkbox][data-short]", refresh
+        );
         filterSrcBar.hidden = false;
       }
 
