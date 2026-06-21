@@ -1,0 +1,232 @@
+(function () {
+  var loadStatus = document.getElementById("load-status");
+  var metaEl = document.getElementById("meta");
+  var metaDl = document.getElementById("meta-dl");
+  var errEl = document.getElementById("err");
+  var reloadBtn = document.getElementById("reload-data");
+  var levelSec = document.getElementById("level-stats-section");
+  var levelGrid = document.getElementById("level-stats-grid");
+  var mergedHost = document.getElementById("merged-table-host");
+  var mainEl = document.getElementById("main-content");
+
+  if (mainEl) mainEl.setAttribute("aria-busy", "true");
+
+  fetch("./table/level_stats.json", { cache: "no-store" })
+    .then(function (r) {
+      if (!r.ok) throw new Error("level_stats.json を取得できません（HTTP " + r.status + "）。フィルタがスキップされたビルドではファイルが無いことがあります。");
+      return r.json();
+    })
+    .then(function (ld) {
+      if (loadStatus) loadStatus.hidden = true;
+      if (reloadBtn) reloadBtn.hidden = true;
+      if (mainEl) mainEl.setAttribute("aria-busy", "false");
+      metaDl.innerHTML = "";
+      if (mergedHost) {
+        mergedHost.innerHTML = "";
+        mergedHost.hidden = true;
+      }
+      if (ld.sql_where) {
+        var dt = document.createElement("dt");
+        dt.textContent = "SQL 条件";
+        var dd = document.createElement("dd");
+        dd.textContent = String(ld.sql_where);
+        metaDl.appendChild(dt);
+        metaDl.appendChild(dd);
+      }
+      if (ld.version != null) {
+        var dt2 = document.createElement("dt");
+        dt2.textContent = "集計 JSON の version";
+        var dd2 = document.createElement("dd");
+        dd2.textContent = String(ld.version);
+        metaDl.appendChild(dt2);
+        metaDl.appendChild(dd2);
+      }
+      metaEl.hidden = metaDl.children.length === 0;
+
+      if (!ld || !Array.isArray(ld.sources) || !ld.sources.length) {
+        errEl.textContent = "level_stats.json に sources がありません（空の集計）。";
+        errEl.hidden = false;
+        return;
+      }
+
+      if (ld.merged_table && typeof ld.merged_table === "object" && mergedHost) {
+        var mt = ld.merged_table;
+        var cardM = document.createElement("div");
+        cardM.className = "level-stats-card merged-table-card";
+        var h3m = document.createElement("h3");
+        h3m.textContent = mt.title ? String(mt.title) : "当難易度表（統合・重複除去後）";
+        cardM.appendChild(h3m);
+        var subM = document.createElement("p");
+        subM.className = "level-stats-sub";
+        var rm = mt.row_count_merged != null ? String(mt.row_count_merged) : "—";
+        var rb = mt.row_count_beatoraja != null ? String(mt.row_count_beatoraja) : "—";
+        var partsM = ["Pages 用データ（拡張列あり）: " + rm + " 行", "beatoraja 登録用（厳格デコード通過）: " + rb + " 行"];
+        if (mt.dropped_strict_decode != null && Number(mt.dropped_strict_decode) > 0) {
+          partsM.push("厳格デコードで除外: " + String(mt.dropped_strict_decode) + " 行");
+        }
+        subM.textContent = partsM.join(" / ");
+        cardM.appendChild(subM);
+        var noteM = document.createElement("p");
+        noteM.className = "level-stats-sub";
+        noteM.textContent =
+          "beatoraja の K フォルダ件数は下表の「beatoraja・重複除去後」列と一致します。「重複除去前」はマージ時に同一譜面が複数表に載っていた分を含むため、beatoraja より多くなります。";
+        cardM.appendChild(noteM);
+        var rowsCl = Array.isArray(mt.custom_level_rows) ? mt.custom_level_rows : [];
+        var srcCols = Array.isArray(mt.source_columns) ? mt.source_columns : [];
+        if (rowsCl.length) {
+          var wrapM = document.createElement("div");
+          wrapM.className = "scroll-mini";
+          var tblM = document.createElement("table");
+          var theadM = document.createElement("thead");
+          var trhM = document.createElement("tr");
+          var thLa = document.createElement("th");
+          thLa.textContent = "独自レベル";
+          var thCntBefore = document.createElement("th");
+          thCntBefore.textContent = "曲数（重複除去前）";
+          var thCnt = document.createElement("th");
+          thCnt.textContent = "曲数（beatoraja・重複除去後）";
+          trhM.appendChild(thLa);
+          trhM.appendChild(thCntBefore);
+          trhM.appendChild(thCnt);
+          srcCols.forEach(function (sc) {
+            var thS = document.createElement("th");
+            var disp = sc && sc.display_name ? String(sc.display_name).trim() : "";
+            var shortN = sc && sc.short_name ? String(sc.short_name).trim() : "";
+            thS.textContent = shortN || disp || ("表 " + (sc && sc.index != null ? sc.index : ""));
+            if (disp && thS.textContent !== disp) thS.title = disp;
+            trhM.appendChild(thS);
+          });
+          theadM.appendChild(trhM);
+          tblM.appendChild(theadM);
+          var tbM = document.createElement("tbody");
+          rowsCl.forEach(function (row) {
+            var tr = document.createElement("tr");
+            var lv = row.level != null && row.level !== "" ? String(row.level) : "";
+            var td1 = document.createElement("td");
+            td1.textContent = lv;
+            var tdBefore = document.createElement("td");
+            tdBefore.className = "num";
+            var beforeCnt =
+              row.count_before_dedup != null ? row.count_before_dedup : row.count != null ? row.count : 0;
+            tdBefore.textContent = String(beforeCnt);
+            var td2 = document.createElement("td");
+            td2.className = "num";
+            td2.textContent = String(row.count != null ? row.count : 0);
+            tr.appendChild(td1);
+            tr.appendChild(tdBefore);
+            tr.appendChild(td2);
+            var bySrc = row.by_source && typeof row.by_source === "object" ? row.by_source : {};
+            srcCols.forEach(function (sc) {
+              var tdS = document.createElement("td");
+              tdS.className = "num";
+              var idx = sc && sc.index != null ? String(sc.index) : "";
+              tdS.textContent = String(bySrc[idx] != null ? bySrc[idx] : 0);
+              tr.appendChild(tdS);
+            });
+            tbM.appendChild(tr);
+          });
+          tblM.appendChild(tbM);
+          wrapM.appendChild(tblM);
+          cardM.appendChild(wrapM);
+        } else if (mt.row_count_merged != null && Number(mt.row_count_merged) > 0) {
+          var pOnly = document.createElement("p");
+          pOnly.className = "level-stats-sub";
+          pOnly.textContent = "独自レベル別の内訳がありません（マッピング未設定の可能性があります）。";
+          cardM.appendChild(pOnly);
+        }
+        mergedHost.appendChild(cardM);
+        mergedHost.hidden = false;
+      }
+
+      levelGrid.innerHTML = "";
+      ld.sources.forEach(function (src) {
+        var card = document.createElement("div");
+        card.className = "level-stats-card";
+        var h3 = document.createElement("h3");
+        var disp = (src.display_name && String(src.display_name).trim()) || ("表 " + (src.index || ""));
+        h3.textContent = disp;
+        card.appendChild(h3);
+        var shortN = (src.short_name && String(src.short_name).trim()) || "";
+        var sub = document.createElement("p");
+        sub.className = "level-stats-sub";
+        var ta = src.total_all != null ? String(src.total_all) : "—";
+        var tf = src.total_filtered != null ? String(src.total_filtered) : "—";
+        sub.textContent = "元表データ " + ta + " 行 / SQL 条件通過 " + tf + " 行（重複除去前）";
+        card.appendChild(sub);
+        var wrap = document.createElement("div");
+        wrap.className = "scroll-mini";
+        var tbl = document.createElement("table");
+        var thead = document.createElement("thead");
+        var trh = document.createElement("tr");
+        var th1 = document.createElement("th");
+        th1.textContent = "レベル";
+        trh.appendChild(th1);
+        var levelRows = Array.isArray(src.level_rows) ? src.level_rows : null;
+        var tb = document.createElement("tbody");
+        if (levelRows) {
+          var th2 = document.createElement("th");
+          th2.textContent = "曲数（SQL 後）";
+          var th3 = document.createElement("th");
+          th3.textContent = "曲数（SQL 前）";
+          trh.appendChild(th2);
+          trh.appendChild(th3);
+        } else {
+          var th2o = document.createElement("th");
+          th2o.textContent = "曲数";
+          trh.appendChild(th2o);
+        }
+        thead.appendChild(trh);
+        tbl.appendChild(thead);
+        if (levelRows) {
+          levelRows.forEach(function (lr) {
+            var tr = document.createElement("tr");
+            var lv = lr.level != null && lr.level !== "" ? String(lr.level) : "";
+            var td1 = document.createElement("td");
+            td1.textContent = shortN && lv ? shortN + lv : lv;
+            var td2 = document.createElement("td");
+            td2.className = "num";
+            td2.textContent = String(lr.after_sql != null ? lr.after_sql : 0);
+            var td3 = document.createElement("td");
+            td3.className = "num";
+            td3.textContent = String(lr.before_sql != null ? lr.before_sql : 0);
+            tr.appendChild(td1);
+            tr.appendChild(td2);
+            tr.appendChild(td3);
+            tb.appendChild(tr);
+          });
+        } else {
+          var bl = src.by_level && typeof src.by_level === "object" ? src.by_level : {};
+          Object.keys(bl).forEach(function (k) {
+            var tr = document.createElement("tr");
+            var td1 = document.createElement("td");
+            td1.textContent = shortN ? shortN + String(k) : String(k);
+            var td2 = document.createElement("td");
+            td2.className = "num";
+            td2.textContent = String(bl[k]);
+            tr.appendChild(td1);
+            tr.appendChild(td2);
+            tb.appendChild(tr);
+          });
+        }
+        tbl.appendChild(tb);
+        wrap.appendChild(tbl);
+        card.appendChild(wrap);
+        levelGrid.appendChild(card);
+      });
+      levelSec.hidden = false;
+    })
+    .catch(function (e) {
+      if (loadStatus) loadStatus.hidden = true;
+      if (mainEl) mainEl.setAttribute("aria-busy", "false");
+      errEl.textContent =
+        "集計データの読み込みに失敗しました。ビルド成果物（table/level_stats.json）を確認してください。詳細: " +
+        String(e.message || e);
+      errEl.hidden = false;
+      if (reloadBtn) {
+        reloadBtn.hidden = false;
+        reloadBtn.onclick = function () {
+          location.reload();
+        };
+      }
+    });
+})();
