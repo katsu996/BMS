@@ -389,8 +389,6 @@
         if (sec && typeof sec === "object" && Object.prototype.hasOwnProperty.call(sec, k)) {
           return !!sec[k];
         }
-        if (section === "db" && (k === "title" || k === "artist")) return false;
-        if (section === "db" && (k === "md5" || k === "sha256")) return false;
         return !hiddenFb[k];
       }
 
@@ -807,38 +805,38 @@
           var thL = document.createElement("th");
           thL.colSpan = Math.max(1, vTLead.length);
           thL.className = "group-lead";
-          thL.textContent = gl.leading || "独自レベル";
+          thL.textContent = gl.leading;
           trh1.appendChild(thL);
         }
         var thT = document.createElement("th");
         thT.colSpan = Math.max(1, vTMain.length);
         thT.className = "group-t";
-        thT.textContent = gl.table || "元難易度表の列";
+        thT.textContent = gl.table;
         trh1.appendChild(thT);
         var thD = document.createElement("th");
         thD.colSpan = Math.max(1, vDKeys.length);
         thD.className = "group-d";
-        thD.textContent = gl.db || "楽曲情報の列";
+        thD.textContent = gl.db;
         trh1.appendChild(thD);
         if (visIr && irCols.length) {
           var thIr = document.createElement("th");
           thIr.colSpan = Math.max(1, irCols.length);
           thIr.className = "group-ir";
-          thIr.textContent = gl.ir || "IR";
+          thIr.textContent = gl.ir;
           trh1.appendChild(thIr);
         }
         if (visChart) {
           var thChart = document.createElement("th");
           thChart.colSpan = 1;
           thChart.className = "group-chart";
-          thChart.textContent = gl.chart || "Chart";
+          thChart.textContent = gl.chart;
           trh1.appendChild(thChart);
         }
         if (vTTrail.length) {
           var thTr = document.createElement("th");
           thTr.colSpan = Math.max(1, vTTrail.length);
           thTr.className = "group-trail";
-          thTr.textContent = gl.trailing || "末尾の表列";
+          thTr.textContent = gl.trailing;
           trh1.appendChild(thTr);
         }
         thead.appendChild(trh1);
@@ -937,15 +935,15 @@
         var tsp = splitLeadingMainTrailTableKeys(allTKeys, runtime);
         var glPick = runtime.group_labels || {};
         if (tsp.lead.length) {
-          addGroup(glPick.leading || "独自レベル", "lead", tsp.lead, visT, "table");
+          addGroup(glPick.leading, "lead", tsp.lead, visT, "table");
         }
         if (tsp.main.length) {
-          addGroup(glPick.table || "元難易度表の列", "t", tsp.main, visT, "table");
+          addGroup(glPick.table, "t", tsp.main, visT, "table");
         }
         if (tsp.trail.length) {
-          addGroup(glPick.trailing || "末尾の表列", "trail", tsp.trail, visT, "table");
+          addGroup(glPick.trailing, "trail", tsp.trail, visT, "table");
         }
-        addGroup(glPick.db || "楽曲情報の列", "d", allDKeys, visD, "db");
+        addGroup(glPick.db, "d", allDKeys, visD, "db");
         var wrapX = document.createElement("div");
         wrapX.className = "colbar-group";
         var hx = document.createElement("div");

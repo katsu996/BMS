@@ -98,6 +98,7 @@
       judge: true,
       feature: true,
       content: true,
+      comment: true,
       favorite: true,
       adddate: true,
       url: true,
