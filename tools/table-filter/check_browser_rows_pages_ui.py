@@ -11,10 +11,7 @@ import os
 import sys
 from typing import Any
 
-
-def _load_json(path: str) -> Any:
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
+from _io_helpers import load_json
 
 
 def validate_pages_ui(pages_ui: Any) -> list[str]:
@@ -106,7 +103,7 @@ def main() -> int:
         print(f"check_browser_rows: スキップ（ファイルなし）: {path}", file=sys.stderr)
         return 0
     try:
-        data = _load_json(path)
+        data = load_json(path)
     except (OSError, json.JSONDecodeError) as e:
         print(f"check_browser_rows: エラー: {path}: {e}", file=sys.stderr)
         return 1

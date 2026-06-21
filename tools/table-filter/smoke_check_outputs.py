@@ -10,15 +10,10 @@ import argparse
 import json
 import os
 import sys
-from typing import Any
 
+from _io_helpers import load_json
 from check_browser_rows_pages_ui import validate_browser_rows
 from source_tables import load_resolved_filter_config, normalize_source_tables
-
-
-def _load_json(path: str) -> Any:
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
 
 
 def main() -> int:
@@ -51,7 +46,7 @@ def main() -> int:
         print(f"smoke: ヘッダーが無いためスキップ: {header_path}", file=sys.stderr)
         return 0
 
-    header = _load_json(header_path)
+    header = load_json(header_path)
     if not isinstance(header, dict):
         print("smoke: エラー: ヘッダー JSON のトップレベルがオブジェクトではありません。", file=sys.stderr)
         return 1
@@ -75,7 +70,7 @@ def main() -> int:
         print(f"smoke: エラー: データ JSON が無い: {data_path}", file=sys.stderr)
         return 1
 
-    data = _load_json(data_path)
+    data = load_json(data_path)
     if not isinstance(data, list):
         print("smoke: エラー: filtered_data.json のトップレベルは配列である必要があります。", file=sys.stderr)
         return 1
@@ -96,7 +91,7 @@ def main() -> int:
     browser_path = os.path.join(out_dir, browser_name)
     if os.path.isfile(browser_path):
         try:
-            br = _load_json(browser_path)
+            br = load_json(browser_path)
         except (OSError, json.JSONDecodeError) as e:
             print(f"smoke: エラー: {browser_path} の読み込み失敗: {e}", file=sys.stderr)
             return 1

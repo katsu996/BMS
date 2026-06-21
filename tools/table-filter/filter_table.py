@@ -18,6 +18,7 @@ import sys
 from typing import Any, Mapping, MutableMapping, Sequence
 from urllib.parse import quote, urljoin
 
+from _io_helpers import save_json
 from beatoraja_rows import (
     apply_beatoraja_custom_level_to_level,
     normalize_beatoraja_chart_row,
@@ -47,18 +48,6 @@ from sql_where_guard import die as _die
 from sql_where_guard import resolve_sql_where, validate_sql_where
 
 DEFAULT_CONFIG = "tools/table-filter/config/filter_config.json"
-
-
-def _load_json(path: str) -> Any:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def _save_json(path: str, obj: Any) -> None:
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=2)
-        f.write("\n")
 
 
 def _json_from_http_body(raw: bytes, *, kind: str, url: str) -> Any:
@@ -683,7 +672,7 @@ def main() -> None:
     sanitize_header_for_beatoraja(new_header, cfg)
 
     strip_keys = strip_keys_cfg(cfg)
-    _save_json(enriched_path, filtered_data)
+    save_json(enriched_path, filtered_data)
 
     dropped = 0
     beatoraja_rows: list[dict[str, Any]] = []
@@ -726,8 +715,8 @@ def main() -> None:
     if not beatoraja_rows and policy_fail:
         raise SystemExit(1)
 
-    _save_json(data_path, beatoraja_rows)
-    _save_json(header_path, new_header)
+    save_json(data_path, beatoraja_rows)
+    save_json(header_path, new_header)
     stats_payload: dict[str, Any] = {
         "version": 2,
         "level_field": level_field,
@@ -743,7 +732,7 @@ def main() -> None:
             "custom_level_rows": merged_custom_level_rows,
         },
     }
-    _save_json(stats_path, stats_payload)
+    save_json(stats_path, stats_payload)
     print(f"書き出し: {stats_path}")
     if use_relative_data_url:
         table_url_hint = (

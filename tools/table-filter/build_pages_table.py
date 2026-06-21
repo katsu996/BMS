@@ -16,23 +16,12 @@ import sys
 from typing import Any
 from urllib.parse import quote
 
+from _io_helpers import load_json, save_json
 from pages_ui_json import load_pages_ui_config
 from source_tables import effective_custom_level_maps, load_resolved_filter_config, normalize_source_tables
 from sql_where_guard import resolve_sql_where
 
 DEFAULT_CONFIG = "tools/table-filter/config/filter_config.json"
-
-
-def _load_json(path: str) -> Any:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def _save_json(path: str, obj: Any) -> None:
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=2)
-        f.write("\n")
 
 
 def _norm_hash(s: Any) -> str:
@@ -48,7 +37,7 @@ def main() -> None:
 
     if not os.path.isfile(cfg_path):
         print(f"設定が無いためスキップ: {cfg_path}", file=sys.stderr)
-        _save_json(default_out, {"meta": {"reason": "設定ファイルなし"}, "rows": []})
+        save_json(default_out, {"meta": {"reason": "設定ファイルなし"}, "rows": []})
         return
 
     cfg = load_resolved_filter_config(cfg_path)
@@ -87,7 +76,7 @@ def main() -> None:
             f"filtered_data が無いため空の browser_rows を出力: {enriched_path} / {default_data_path}",
             file=sys.stderr,
         )
-        _save_json(
+        save_json(
             browser_path,
             {
                 "meta": {
@@ -101,10 +90,10 @@ def main() -> None:
         )
         return
 
-    filtered = _load_json(filtered_path)
+    filtered = load_json(filtered_path)
     if not isinstance(filtered, list):
         print("filtered_data のトップレベルが配列ではありません。", file=sys.stderr)
-        _save_json(
+        save_json(
             browser_path,
             {"meta": {"reason": "invalid filtered_data", "pages_ui": pages_ui, "pages_ui_config_path": pages_ui_cfg_rel}, "rows": []},
         )
@@ -204,7 +193,7 @@ def main() -> None:
         "pages_ui_config_path": pages_ui_cfg_rel,
     }
 
-    _save_json(browser_path, {"meta": meta, "rows": rows_out})
+    save_json(browser_path, {"meta": meta, "rows": rows_out})
     print(f"書き出し: {browser_path} （{len(rows_out)} 行、DB 一致 {meta['matched_songdata']}）")
 
 
