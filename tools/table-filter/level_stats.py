@@ -4,23 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
+from _level_normalizer import level_to_str
+
 UNSET_LEVEL_LABEL = "(未設定)"
 
 
 def level_bucket_for_stats(raw_lvl: Any) -> str:
-    if raw_lvl is None:
-        return UNSET_LEVEL_LABEL
-    if isinstance(raw_lvl, bool):
-        return str(raw_lvl).lower()
-    if isinstance(raw_lvl, int):
-        return str(raw_lvl)
-    if isinstance(raw_lvl, float):
-        if raw_lvl.is_integer():
-            return str(int(raw_lvl))
-        s = str(raw_lvl).strip()
-        return s if s else UNSET_LEVEL_LABEL
-    s = str(raw_lvl).strip()
-    if not s:
+    s = level_to_str(raw_lvl)
+    if s is None:
         return UNSET_LEVEL_LABEL
     try:
         f = float(s.replace(",", ""))

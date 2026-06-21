@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping, MutableMapping, Sequence
 
+from _level_normalizer import level_to_str
 from level_stats import sort_level_stat_keys
 from sql_where_guard import die
 
@@ -135,18 +136,7 @@ def _cfg_bool_default_true(val: Any) -> bool:
 
 
 def _custom_level_to_level_string(raw: Any) -> str | None:
-    if raw is None:
-        return None
-    if isinstance(raw, bool):
-        return str(raw).lower()
-    if isinstance(raw, int):
-        return str(raw)
-    if isinstance(raw, float):
-        if raw.is_integer():
-            return str(int(raw))
-        return str(raw).strip()
-    s = str(raw).strip()
-    return s or None
+    return level_to_str(raw)
 
 
 def apply_beatoraja_custom_level_to_level(row: MutableMapping[str, Any], cfg: Mapping[str, Any]) -> None:

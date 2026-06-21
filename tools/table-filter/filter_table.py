@@ -19,6 +19,7 @@ from typing import Any, Mapping, MutableMapping, Sequence
 from urllib.parse import quote, urljoin
 
 from _io_helpers import save_json
+from _level_normalizer import level_to_float, level_to_lookup_keys
 from beatoraja_rows import (
     apply_beatoraja_custom_level_to_level,
     normalize_beatoraja_chart_row,
@@ -148,20 +149,7 @@ def _row_dedupe_key(row: Mapping[str, Any]) -> str | None:
 
 
 def _custom_level_numeric(row: Mapping[str, Any], custom_level_field: str) -> float | None:
-    raw = row.get(custom_level_field)
-    if raw is None or isinstance(raw, bool):
-        return None
-    if isinstance(raw, int):
-        return float(raw)
-    if isinstance(raw, float):
-        return raw
-    s = str(raw).strip()
-    if not s:
-        return None
-    try:
-        return float(s)
-    except ValueError:
-        return None
+    return level_to_float(row.get(custom_level_field))
 
 
 def _should_replace_merged_row_by_custom_level(
@@ -251,37 +239,7 @@ def _filter_course_object(obj: MutableMapping[str, Any], md5s: set[str], sha256s
 
 
 def _row_level_lookup_keys(raw_lvl: Any) -> list[str]:
-    if raw_lvl is None:
-        return []
-    keys: list[str] = []
-    if isinstance(raw_lvl, bool):
-        keys.append(str(raw_lvl).lower())
-        return keys
-    if isinstance(raw_lvl, int):
-        keys.append(str(raw_lvl))
-        return keys
-    if isinstance(raw_lvl, float):
-        if raw_lvl.is_integer():
-            keys.append(str(int(raw_lvl)))
-        else:
-            keys.append(str(raw_lvl).strip())
-        return keys
-    s = str(raw_lvl).strip()
-    if s:
-        keys.append(s)
-        try:
-            f = float(s)
-            if f.is_integer():
-                keys.append(str(int(f)))
-        except ValueError:
-            pass
-    out: list[str] = []
-    seen: set[str] = set()
-    for k in keys:
-        if k and k not in seen:
-            seen.add(k)
-            out.append(k)
-    return out
+    return level_to_lookup_keys(raw_lvl)
 
 
 def _apply_custom_level(
