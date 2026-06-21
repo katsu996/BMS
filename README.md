@@ -1,6 +1,6 @@
-# test-CursorToSlack
+# BMS
 
-beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Actions で絞り込み JSON を生成し、GitHub Pages で公開する実験用リポジトリです。
+beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Actions で絞り込み JSON を生成し、GitHub Pages で公開するリポジトリです。
 
 ---
 
