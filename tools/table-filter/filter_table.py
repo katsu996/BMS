@@ -351,12 +351,132 @@ def _empty_rows_policy_fail(cfg: Mapping[str, Any]) -> bool:
     return True
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description="songdata.db と難易度表 JSON を突き合わせてフィルタする")
-    ap.add_argument("--config", default=os.environ.get("FILTER_CONFIG", DEFAULT_CONFIG), help="設定 JSON のパス")
-    args = ap.parse_args()
+def _build_beatoraja_rows(
+    filtered_data: list[dict[str, Any]], cfg: Mapping[str, Any]
+) -> tuple[list[dict[str, Any]], int]:
+    strip_keys = strip_keys_cfg(cfg)
+    beatoraja_rows: list[dict[str, Any]] = []
+    dropped = 0
+    for r in filtered_data:
+        clean = sanitize_chart_row_for_beatoraja(r, strip_keys)
+        apply_beatoraja_custom_level_to_level(clean, cfg)
+        normalize_beatoraja_chart_row(clean)
+        if row_passes_beatoraja_strict_decoder(clean):
+            beatoraja_rows.append(clean)
+        else:
+            dropped += 1
+    return beatoraja_rows, dropped
 
-    cfg_path = args.config
+
+def _write_outputs(
+    cfg: Mapping[str, Any],
+    *,
+    filtered_data: list[dict[str, Any]],
+    pre_dedup_rows: list[dict[str, Any]],
+    new_header: dict[str, Any],
+    per_source_level_stats: list[dict[str, Any]],
+    level_field: str,
+    sql_where: str,
+    use_relative_data_url: bool,
+    site_base: str,
+    header_urls_cfg: list[str],
+) -> None:
+    out_dir = cfg.get("output_dir", "docs/table")
+    data_name = cfg.get("output_data_filename", "filtered_data.json")
+    header_name = cfg.get("output_header_filename", "filtered_header.json")
+    enriched_name = (
+        str(cfg.get("output_data_enriched_filename") or "filtered_data_enriched.json").strip()
+        or "filtered_data_enriched.json"
+    )
+    stats_name = str(cfg.get("output_level_stats_filename") or "level_stats.json").strip() or "level_stats.json"
+    data_path = os.path.join(out_dir, data_name)
+    header_path = os.path.join(out_dir, header_name)
+    enriched_path = os.path.join(out_dir, enriched_name)
+    stats_path = os.path.join(out_dir, stats_name)
+    all_paths = [data_path, header_path, enriched_path, stats_path]
+    seen = set()
+    for p in all_paths:
+        if p in seen:
+            _die(f"出力ファイル名が重複しています: {p}")
+        seen.add(p)
+    os.makedirs(out_dir, exist_ok=True)
+
+    if use_relative_data_url:
+        new_header["data_url"] = os.path.basename(data_name)
+    else:
+        new_header["data_url"] = f"{site_base}/{data_name}"
+
+    sanitize_header_for_beatoraja(new_header, cfg)
+
+    save_json(enriched_path, filtered_data)
+
+    beatoraja_rows, dropped = _build_beatoraja_rows(filtered_data, cfg)
+
+    if dropped:
+        print(
+            f"警告: beatoraja 厳格デコードに合わない行を {dropped} 件スキップしました（{enriched_name} には残します）。",
+            file=sys.stderr,
+        )
+
+    cl_field_merged = str(cfg.get("custom_level_field") or "custom_level").strip() or "custom_level"
+    merged_source_columns, merged_custom_level_rows = build_merged_custom_level_rows(
+        filtered_data,
+        custom_level_field=cl_field_merged,
+        source_stats=per_source_level_stats,
+        rows_before_dedup=pre_dedup_rows,
+    )
+
+    if not beatoraja_rows:
+        print(
+            "エラー: beatoraja 向けデータ行が 0 件です。"
+            " 本体は TableData.validate() で失敗し「難易度表の値が不正です」になります。"
+            " songdata.db を更新するか sql_where を見直し、"
+            " 元表とハッシュが交差する行が少なくとも 1 件残るようにしてください。",
+            file=sys.stderr,
+        )
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            print("::error title=難易度表フィルタ::beatoraja 向けデータ行が 0 件です", file=sys.stderr)
+    else:
+        sync_header_level_order_from_beatoraja_rows(new_header, beatoraja_rows)
+
+    policy_fail = _empty_rows_policy_fail(cfg)
+    if not beatoraja_rows and policy_fail:
+        raise SystemExit(1)
+
+    save_json(data_path, beatoraja_rows)
+    save_json(header_path, new_header)
+    stats_payload: dict[str, Any] = {
+        "version": 2,
+        "level_field": level_field,
+        "sql_where": sql_where,
+        "sources": per_source_level_stats,
+        "merged_table": {
+            "title": "当難易度表（統合・重複除去後）",
+            "row_count_merged": len(filtered_data),
+            "row_count_beatoraja": len(beatoraja_rows),
+            "dropped_strict_decode": dropped,
+            "custom_level_field": cl_field_merged,
+            "source_columns": merged_source_columns,
+            "custom_level_rows": merged_custom_level_rows,
+        },
+    }
+    save_json(stats_path, stats_payload)
+    print(f"書き出し: {stats_path}")
+    if use_relative_data_url:
+        table_url_hint = (
+            f"Table URL にはヘッダー JSON（例: …/table/{header_name}）を登録してください。"
+            f" data_url はヘッダー URL からの相対パス: {new_header.get('data_url')!r}"
+        )
+    else:
+        table_url_hint = f"公開用 Table URL 候補: {site_base}/{header_name}"
+    print(
+        f"書き出し: {enriched_path}（Pages 用・拡張列あり）\n"
+        f"書き出し: {data_path}（beatoraja 用・拡張列除去）\n"
+        f"書き出し: {header_path}\n{table_url_hint}"
+    )
+
+
+def _resolve_config_pipeline(cfg_path: str) -> dict[str, Any] | None:
     if not os.path.isfile(cfg_path):
         print(f"設定ファイルが無いためスキップします: {cfg_path}", file=sys.stderr)
         raise SystemExit(0)
@@ -435,10 +555,7 @@ def main() -> None:
     use_relative_data_url = cfg.get("use_relative_data_url", True)
     if not isinstance(use_relative_data_url, bool):
         use_relative_data_url = str(use_relative_data_url).strip().lower() in (
-            "1",
-            "true",
-            "yes",
-            "on",
+            "1", "true", "yes", "on",
         )
 
     site_base = (cfg.get("site_base_url") or os.environ.get("SITE_BASE_URL") or "").strip().rstrip("/")
@@ -455,12 +572,8 @@ def main() -> None:
             skip_no_db = str(skip_no_db).strip().lower() in ("1", "true", "yes", "on")
         in_github_actions = os.environ.get("GITHUB_ACTIONS") == "true"
         allow_missing_in_ci = os.environ.get("FILTER_CI_ALLOW_MISSING_SONGDATA", "").strip().lower() in (
-            "1",
-            "true",
-            "yes",
-            "on",
+            "1", "true", "yes", "on",
         )
-        # docs/table の生成物は .gitignore されており、CI で DB 無しのスキップは空の難易度表デプロイに直結する。
         if in_github_actions and not allow_missing_in_ci:
             _die(
                 f"songdata.db が見つかりません（GitHub Actions）: {songdata}\n"
@@ -476,8 +589,39 @@ def main() -> None:
         _die(f"songdata.db が見つかりません: {songdata}")
 
     sql_where = resolve_sql_where(cfg)
-    md5s, sha256s = _query_allowed_hashes(songdata, sql_where)
-    print(f"許可ハッシュ数: md5={len(md5s)}, sha256={len(sha256s)} (WHERE {sql_where!r})")
+
+    return {
+        "cfg": cfg,
+        "header_urls_cfg": header_urls_cfg,
+        "resolved_json_urls": resolved_json_urls,
+        "disp_cfg": disp_cfg,
+        "short_cfg": short_cfg,
+        "level_maps": level_maps,
+        "multi_source": multi_source,
+        "use_relative_data_url": use_relative_data_url,
+        "site_base": site_base,
+        "songdata": songdata,
+        "sql_where": sql_where,
+    }
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="songdata.db と難易度表 JSON を突き合わせてフィルタする")
+    ap.add_argument("--config", default=os.environ.get("FILTER_CONFIG", DEFAULT_CONFIG), help="設定 JSON のパス")
+    args = ap.parse_args()
+
+    ctx = _resolve_config_pipeline(args.config)
+
+    cfg = ctx["cfg"]
+    md5s, sha256s = _query_allowed_hashes(ctx["songdata"], ctx["sql_where"])
+    print(f"許可ハッシュ数: md5={len(md5s)}, sha256={len(sha256s)} (WHERE {ctx['sql_where']!r})")
+
+    resolved_json_urls = ctx["resolved_json_urls"]
+    disp_cfg = ctx["disp_cfg"]
+    short_cfg = ctx["short_cfg"]
+    header_urls_cfg = ctx["header_urls_cfg"]
+    level_maps = ctx["level_maps"]
+    multi_source = ctx["multi_source"]
 
     merged_rows: list[dict[str, Any]] = []
     pre_dedup_rows: list[dict[str, Any]] = []
@@ -580,7 +724,6 @@ def main() -> None:
                 continue
             dk = _row_dedupe_key(row)
             new_row = dict(row)
-
             _apply_custom_level(new_row, idx, level_maps, cfg)
 
             pre_row = dict(new_row)
@@ -644,107 +787,17 @@ def main() -> None:
         f"データ行（全ソース合算・重複除去後）: 入力 {total_in} 行、条件通過 {total_filtered}、ユニーク {len(filtered_data)}"
     )
 
-    out_dir = cfg.get("output_dir", "docs/table")
-    data_name = cfg.get("output_data_filename", "filtered_data.json")
-    header_name = cfg.get("output_header_filename", "filtered_header.json")
-    enriched_name = (
-        str(cfg.get("output_data_enriched_filename") or "filtered_data_enriched.json").strip()
-        or "filtered_data_enriched.json"
-    )
-    stats_name = str(cfg.get("output_level_stats_filename") or "level_stats.json").strip() or "level_stats.json"
-    data_path = os.path.join(out_dir, data_name)
-    header_path = os.path.join(out_dir, header_name)
-    enriched_path = os.path.join(out_dir, enriched_name)
-    stats_path = os.path.join(out_dir, stats_name)
-    all_paths = [data_path, header_path, enriched_path, stats_path]
-    seen = set()
-    for p in all_paths:
-        if p in seen:
-            _die(f"出力ファイル名が重複しています: {p}")
-        seen.add(p)
-    os.makedirs(out_dir, exist_ok=True)
-
-    if use_relative_data_url:
-        new_header["data_url"] = os.path.basename(data_name)
-    else:
-        new_header["data_url"] = f"{site_base}/{data_name}"
-
-    sanitize_header_for_beatoraja(new_header, cfg)
-
-    strip_keys = strip_keys_cfg(cfg)
-    save_json(enriched_path, filtered_data)
-
-    dropped = 0
-    beatoraja_rows: list[dict[str, Any]] = []
-    for r in filtered_data:
-        clean = sanitize_chart_row_for_beatoraja(r, strip_keys)
-        apply_beatoraja_custom_level_to_level(clean, cfg)
-        normalize_beatoraja_chart_row(clean)
-        if row_passes_beatoraja_strict_decoder(clean):
-            beatoraja_rows.append(clean)
-        else:
-            dropped += 1
-    if dropped:
-        print(
-            f"警告: beatoraja 厳格デコードに合わない行を {dropped} 件スキップしました（{enriched_name} には残します）。",
-            file=sys.stderr,
-        )
-
-    cl_field_merged = str(cfg.get("custom_level_field") or "custom_level").strip() or "custom_level"
-    merged_source_columns, merged_custom_level_rows = build_merged_custom_level_rows(
-        filtered_data,
-        custom_level_field=cl_field_merged,
-        source_stats=per_source_level_stats,
-        rows_before_dedup=pre_dedup_rows,
-    )
-
-    if not beatoraja_rows:
-        print(
-            "エラー: beatoraja 向けデータ行が 0 件です。"
-            " 本体は TableData.validate() で失敗し「難易度表の値が不正です」になります。"
-            " songdata.db を更新するか sql_where を見直し、"
-            " 元表とハッシュが交差する行が少なくとも 1 件残るようにしてください。",
-            file=sys.stderr,
-        )
-        if os.environ.get("GITHUB_ACTIONS") == "true":
-            print("::error title=難易度表フィルタ::beatoraja 向けデータ行が 0 件です", file=sys.stderr)
-    else:
-        sync_header_level_order_from_beatoraja_rows(new_header, beatoraja_rows)
-
-    policy_fail = _empty_rows_policy_fail(cfg)
-    if not beatoraja_rows and policy_fail:
-        raise SystemExit(1)
-
-    save_json(data_path, beatoraja_rows)
-    save_json(header_path, new_header)
-    stats_payload: dict[str, Any] = {
-        "version": 2,
-        "level_field": level_field,
-        "sql_where": sql_where,
-        "sources": per_source_level_stats,
-        "merged_table": {
-            "title": "当難易度表（統合・重複除去後）",
-            "row_count_merged": len(filtered_data),
-            "row_count_beatoraja": len(beatoraja_rows),
-            "dropped_strict_decode": dropped,
-            "custom_level_field": cl_field_merged,
-            "source_columns": merged_source_columns,
-            "custom_level_rows": merged_custom_level_rows,
-        },
-    }
-    save_json(stats_path, stats_payload)
-    print(f"書き出し: {stats_path}")
-    if use_relative_data_url:
-        table_url_hint = (
-            f"Table URL にはヘッダー JSON（例: …/table/{header_name}）を登録してください。"
-            f" data_url はヘッダー URL からの相対パス: {new_header.get('data_url')!r}"
-        )
-    else:
-        table_url_hint = f"公開用 Table URL 候補: {site_base}/{header_name}"
-    print(
-        f"書き出し: {enriched_path}（Pages 用・拡張列あり）\n"
-        f"書き出し: {data_path}（beatoraja 用・拡張列除去）\n"
-        f"書き出し: {header_path}\n{table_url_hint}"
+    _write_outputs(
+        cfg,
+        filtered_data=filtered_data,
+        pre_dedup_rows=pre_dedup_rows,
+        new_header=new_header,
+        per_source_level_stats=per_source_level_stats,
+        level_field=level_field,
+        sql_where=ctx["sql_where"],
+        use_relative_data_url=ctx["use_relative_data_url"],
+        site_base=ctx["site_base"],
+        header_urls_cfg=ctx["header_urls_cfg"],
     )
 
 
