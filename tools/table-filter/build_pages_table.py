@@ -30,7 +30,9 @@ def _norm_hash(s: Any) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="filtered_data と songdata.db を突合し browser_rows.json を出力")
-    ap.add_argument("--config", default=os.environ.get("FILTER_CONFIG", DEFAULT_CONFIG), help="filter_config.json のパス")
+    ap.add_argument(
+        "--config", default=os.environ.get("FILTER_CONFIG", DEFAULT_CONFIG), help="filter_config.json のパス"
+    )
     args = ap.parse_args()
     cfg_path = args.config
     default_out = os.path.join("docs", "table", "browser_rows.json")
@@ -43,7 +45,10 @@ def main() -> None:
     cfg = load_resolved_filter_config(cfg_path)
     out_dir = cfg.get("output_dir", "docs/table")
     data_name = cfg.get("output_data_filename", "filtered_data.json")
-    enriched_name = str(cfg.get("output_data_enriched_filename") or "filtered_data_enriched.json").strip() or "filtered_data_enriched.json"
+    enriched_name = (
+        str(cfg.get("output_data_enriched_filename") or "filtered_data_enriched.json").strip()
+        or "filtered_data_enriched.json"
+    )
     enriched_path = os.path.join(out_dir, enriched_name)
     default_data_path = os.path.join(out_dir, data_name)
     if os.path.isfile(enriched_path):
@@ -95,7 +100,14 @@ def main() -> None:
         print("filtered_data のトップレベルが配列ではありません。", file=sys.stderr)
         save_json(
             browser_path,
-            {"meta": {"reason": "invalid filtered_data", "pages_ui": pages_ui, "pages_ui_config_path": pages_ui_cfg_rel}, "rows": []},
+            {
+                "meta": {
+                    "reason": "invalid filtered_data",
+                    "pages_ui": pages_ui,
+                    "pages_ui_config_path": pages_ui_cfg_rel,
+                },
+                "rows": [],
+            },
         )
         return
 
@@ -162,16 +174,13 @@ def main() -> None:
     for i in range(n_src):
         label = disp_cfg[i] if i < len(disp_cfg) else ""
         display_names.append(label)
-    legend = [
-        f"{i + 1}. {display_names[i] if display_names[i] else f'表 {i + 1}'}" for i in range(n_src)
-    ]
+    legend = [f"{i + 1}. {display_names[i] if display_names[i] else f'表 {i + 1}'}" for i in range(n_src)]
 
     short_names: list[str] = []
     for i in range(n_src):
         short_names.append(short_cfg[i] if i < len(short_cfg) else "")
     legend_short = [
-        f"{i + 1}. {short_names[i] if short_names[i] else display_names[i] or f'表 {i + 1}'}"
-        for i in range(n_src)
+        f"{i + 1}. {short_names[i] if short_names[i] else display_names[i] or f'表 {i + 1}'}" for i in range(n_src)
     ]
 
     page_title = str(cfg.get("page_title") or cfg.get("output_header_name") or "").strip()

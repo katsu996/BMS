@@ -51,7 +51,7 @@ def resolve_source_tables_path(cfg: MutableMapping[str, Any], *, config_path: st
         cfg["source_tables"] = raw_file["source_tables"]
     else:
         raise ValueError(
-            f"source_tables_path の JSON は配列か、{{\"source_tables\": [...]}} 形式である必要があります: {fp}"
+            f'source_tables_path の JSON は配列か、{{"source_tables": [...]}} 形式である必要があります: {fp}'
         )
 
 

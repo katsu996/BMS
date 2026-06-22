@@ -17,9 +17,7 @@ class TestBeatorajaRows(unittest.TestCase):
     def test_strict_decoder_requires_level_and_long_hash(self) -> None:
         self.assertFalse(row_passes_beatoraja_strict_decoder({"level": "12", "md5": "a" * 24}))
         self.assertTrue(
-            row_passes_beatoraja_strict_decoder(
-                {"level": "12", "md5": "a" * 32, "sha256": None, "title": "x"}
-            )
+            row_passes_beatoraja_strict_decoder({"level": "12", "md5": "a" * 32, "sha256": None, "title": "x"})
         )
 
     def test_normalize_empty_title(self) -> None:

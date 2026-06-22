@@ -78,8 +78,7 @@ def main() -> int:
 
     if len(data) == 0:
         print(
-            "smoke: エラー: filtered_data.json が空配列です。"
-            " beatoraja は TableData.validate() で失敗します。",
+            "smoke: エラー: filtered_data.json が空配列です。 beatoraja は TableData.validate() で失敗します。",
             file=sys.stderr,
         )
         if in_ci:

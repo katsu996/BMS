@@ -43,12 +43,8 @@ class TestCustomLevelDedupePriority(unittest.TestCase):
 
     def test_equal_or_lower_does_not_replace(self) -> None:
         prev = {"custom_level": 15, "title": "keep"}
-        self.assertFalse(
-            _should_replace_merged_row_by_custom_level(prev, {"custom_level": 14}, "custom_level")
-        )
-        self.assertFalse(
-            _should_replace_merged_row_by_custom_level(prev, {"custom_level": 15}, "custom_level")
-        )
+        self.assertFalse(_should_replace_merged_row_by_custom_level(prev, {"custom_level": 14}, "custom_level"))
+        self.assertFalse(_should_replace_merged_row_by_custom_level(prev, {"custom_level": 15}, "custom_level"))
 
     def test_replace_keeps_merged_source_names(self) -> None:
         prev: dict = {

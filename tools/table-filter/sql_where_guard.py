@@ -79,8 +79,19 @@ SQL_WHERE_PRESETS: dict[str, str] = {
 _IDENT_RE = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
 _BANNED_WORD_RES: list[re.Pattern[str]] = [
     re.compile(r"\b" + re.escape(w) + r"\b", re.IGNORECASE)
-    for w in ("attach", "detach", "pragma", "drop", "delete", "insert", "update", "create",
-              "replace", "trigger", "vacuum")
+    for w in (
+        "attach",
+        "detach",
+        "pragma",
+        "drop",
+        "delete",
+        "insert",
+        "update",
+        "create",
+        "replace",
+        "trigger",
+        "vacuum",
+    )
 ]
 
 
@@ -105,7 +116,9 @@ def resolve_sql_where(cfg: Mapping[str, Any]) -> str:
 
 def validate_sql_where(fragment: str) -> None:
     if not fragment or not fragment.strip():
-        die("設定 sql_where（またはプリセット）が空です。例: minbpm IS NOT NULL AND maxbpm IS NOT NULL AND minbpm = maxbpm")
+        die(
+            "設定 sql_where（またはプリセット）が空です。例: minbpm IS NOT NULL AND maxbpm IS NOT NULL AND minbpm = maxbpm"
+        )
     frag = fragment.strip()
     if len(frag) > 500:
         die("sql_where が長すぎます（上限 500 文字）。")
@@ -127,6 +140,5 @@ def validate_sql_where(fragment: str) -> None:
         if word in SONG_TABLE_COLUMNS:
             continue
         die(
-            f"sql_where に許可されていない識別子があります: {m.group(0)!r}。"
-            " song テーブルの列名と SQLite の式キーワード以外は使えません。"
+            f"sql_where に許可されていない識別子があります: {m.group(0)!r}。 song テーブルの列名と SQLite の式キーワード以外は使えません。"
         )

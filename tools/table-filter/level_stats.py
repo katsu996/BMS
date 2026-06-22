@@ -87,7 +87,9 @@ def source_indices_for_merged_row(
     return found
 
 
-def _source_columns_from_stats(source_stats: list[dict[str, Any]]) -> tuple[
+def _source_columns_from_stats(
+    source_stats: list[dict[str, Any]],
+) -> tuple[
     list[dict[str, Any]],
     dict[str, int],
     dict[str, int],
@@ -155,9 +157,7 @@ def build_merged_custom_level_rows(
     rows_before_dedup: list[dict[str, Any]] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """独自レベル別の曲数（重複除去前後）と、元難易度表ごとの内訳列を返す。"""
-    source_columns, display_name_to_index, short_name_to_index = _source_columns_from_stats(
-        source_stats
-    )
+    source_columns, display_name_to_index, short_name_to_index = _source_columns_from_stats(source_stats)
 
     merged_after, by_src_after = _accumulate_custom_level_buckets(
         rows_after_dedup,
@@ -173,9 +173,7 @@ def build_merged_custom_level_rows(
         short_name_to_index=short_name_to_index,
     )
 
-    level_keys = sort_level_stat_keys(
-        list(set(merged_after.keys()) | set(merged_before.keys()))
-    )
+    level_keys = sort_level_stat_keys(list(set(merged_after.keys()) | set(merged_before.keys())))
     out_rows: list[dict[str, Any]] = []
     for level_key in level_keys:
         per_src = by_src_after.get(level_key, {})

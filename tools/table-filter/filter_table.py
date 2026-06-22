@@ -55,10 +55,7 @@ def _json_from_http_body(raw: bytes, *, kind: str, url: str) -> Any:
     """GET 本文を JSON として読む。HTML や壊れた JSON のときは分かりやすく終了する。"""
     text = raw.decode("utf-8", errors="replace").lstrip("\ufeff \t\r\n")
     if text.startswith("<"):
-        _die(
-            f"{kind} の取得結果が HTML です（JSON ではありません）。"
-            f" Cloudflare や URL 誤りの可能性があります: {url}"
-        )
+        _die(f"{kind} の取得結果が HTML です（JSON ではありません）。 Cloudflare や URL 誤りの可能性があります: {url}")
     try:
         return json.loads(text)
     except json.JSONDecodeError as exc:
@@ -226,7 +223,9 @@ def _filter_data_array(data: Any, md5s: set[str], sha256s: set[str]) -> list[Any
     return out
 
 
-def _filter_course_object(obj: MutableMapping[str, Any], md5s: set[str], sha256s: set[str]) -> MutableMapping[str, Any] | None:
+def _filter_course_object(
+    obj: MutableMapping[str, Any], md5s: set[str], sha256s: set[str]
+) -> MutableMapping[str, Any] | None:
     charts = obj.get("charts")
     if not isinstance(charts, list):
         return obj
@@ -481,8 +480,10 @@ def _resolve_config_pipeline(
         isinstance(e.get("custom_level_mapping"), dict) and bool(normalize_level_map(e.get("custom_level_mapping")))
         for e in entries
     )
-    if has_embedded and isinstance(legacy_maps, list) and any(
-        isinstance(x, dict) and bool(normalize_level_map(x)) for x in legacy_maps
+    if (
+        has_embedded
+        and isinstance(legacy_maps, list)
+        and any(isinstance(x, dict) and bool(normalize_level_map(x)) for x in legacy_maps)
     ):
         print(
             "注意: 各ソースの custom_level_mapping を優先します（トップレベル custom_level_mapping は、"
@@ -520,7 +521,10 @@ def _resolve_config_pipeline(
     use_relative_data_url = cfg.get("use_relative_data_url", True)
     if not isinstance(use_relative_data_url, bool):
         use_relative_data_url = str(use_relative_data_url).strip().lower() in (
-            "1", "true", "yes", "on",
+            "1",
+            "true",
+            "yes",
+            "on",
         )
 
     site_base = (cfg.get("site_base_url") or env_site_base_url or "").strip().rstrip("/")
@@ -570,14 +574,19 @@ def main() -> None:
     in_ci = os.environ.get("GITHUB_ACTIONS") == "true"
     env_site_base = os.environ.get("SITE_BASE_URL", "")
     env_allow_missing = os.environ.get("FILTER_CI_ALLOW_MISSING_SONGDATA", "").strip().lower() in (
-        "1", "true", "yes", "on",
+        "1",
+        "true",
+        "yes",
+        "on",
     )
 
     ap = argparse.ArgumentParser(description="songdata.db と難易度表 JSON を突き合わせてフィルタする")
     ap.add_argument("--config", default=os.environ.get("FILTER_CONFIG", DEFAULT_CONFIG), help="設定 JSON のパス")
     args = ap.parse_args()
 
-    ctx = _resolve_config_pipeline(args.config, in_ci=in_ci, env_site_base_url=env_site_base, env_allow_missing_songdata=env_allow_missing)
+    ctx = _resolve_config_pipeline(
+        args.config, in_ci=in_ci, env_site_base_url=env_site_base, env_allow_missing_songdata=env_allow_missing
+    )
 
     cfg = ctx["cfg"]
     md5s, sha256s = _query_allowed_hashes(ctx["songdata"], ctx["sql_where"])

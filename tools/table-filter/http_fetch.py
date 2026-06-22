@@ -42,8 +42,7 @@ def fetch_bytes(
             time.sleep(wait)
     assert last_err is not None
     print(
-        f"エラー: URL 取得に {retries} 回失敗しました: {url}\n"
-        f"  最終例外: {type(last_err).__name__}: {last_err}",
+        f"エラー: URL 取得に {retries} 回失敗しました: {url}\n  最終例外: {type(last_err).__name__}: {last_err}",
         file=sys.stderr,
     )
     raise last_err
