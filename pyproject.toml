@@ -1,7 +1,7 @@
 [project]
 name = "bms-table-filter"
 version = "0.1.0"
-description = "beatoraja songdata.db / difficulty table filter & Pages viewer"
+description = "BMS difficulty table"
 requires-python = ">=3.11"
 
 [dependency-groups]
