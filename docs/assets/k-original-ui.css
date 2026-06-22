@@ -5,8 +5,10 @@
     */
     @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
-    :root {
+    html {
       color-scheme: dark;
+    }
+    :root {
       --background: 0 0% 0%;        /* canvas — #000 */
       --foreground: 0 0% 100%;       /* ink / on-dark — #fff */
       --card: 0 0% 10%;              /* surface-card — #1a1a1a */
@@ -165,7 +167,12 @@
       border-radius: 0;
       font-size: 0.875rem;
       min-width: 10rem;
-      background-color: transparent;
+      background-color: hsl(var(--card));
+      color: hsl(var(--foreground));
+      color-scheme: dark;
+    }
+    .shadcn-select option {
+      background-color: hsl(var(--card));
       color: hsl(var(--foreground));
     }
     .shadcn-select:focus-visible {
