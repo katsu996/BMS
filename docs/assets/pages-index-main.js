@@ -1186,11 +1186,18 @@
           var tr = document.createElement("tr");
           var t = r.table || {};
           var d = r.db || {};
+          function _tv(k) {
+            var val = t[k];
+            if (k === "source_table_short_names" && Array.isArray(val) && t.level != null && t.level !== "") {
+              return val.map(function (s) { return s + t.level; });
+            }
+            return val;
+          }
           vTLead.forEach(function (k) {
-            tr.insertAdjacentHTML("beforeend", cellHtml(t[k], "table", k, runtime));
+            tr.insertAdjacentHTML("beforeend", cellHtml(_tv(k), "table", k, runtime));
           });
           vTMain.forEach(function (k) {
-            tr.insertAdjacentHTML("beforeend", cellHtml(t[k], "table", k, runtime));
+            tr.insertAdjacentHTML("beforeend", cellHtml(_tv(k), "table", k, runtime));
           });
           if (!vTMain.length) tr.insertAdjacentHTML("beforeend", '<td class="empty">—</td>');
           vDKeys.forEach(function (k) {
@@ -1200,7 +1207,7 @@
           if (visIr) tr.insertAdjacentHTML("beforeend", irCellsHtml(t, runtime));
           if (visChart) tr.insertAdjacentHTML("beforeend", chartCellHtml(t, runtime));
           vTTrail.forEach(function (k) {
-            tr.insertAdjacentHTML("beforeend", cellHtml(t[k], "table", k, runtime));
+            tr.insertAdjacentHTML("beforeend", cellHtml(_tv(k), "table", k, runtime));
           });
           tbody.appendChild(tr);
         });
