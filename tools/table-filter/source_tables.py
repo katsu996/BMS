@@ -65,7 +65,8 @@ def load_resolved_filter_config(config_path: str) -> dict[str, Any]:
 
 def extract_source_table_entries(cfg: Mapping[str, Any]) -> list[dict[str, Any]]:
     """
-    有効な難易度表ソースのエントリ一覧（各要素は header_url / display_name / short_name / custom_level_mapping 等を含み得る）。
+    有効な難易度表ソースのエントリ一覧
+    （各要素は header_url / display_name / short_name / custom_level_mapping 等を含み得る）。
     """
     raw = cfg.get("source_tables")
     out: list[dict[str, Any]] = []

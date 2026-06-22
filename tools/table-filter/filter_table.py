@@ -372,7 +372,8 @@ def _write_outputs(
 
     if dropped:
         print(
-            f"警告: beatoraja 厳格デコードに合わない行を {dropped} 件スキップしました（{enriched_name} には残します）。",
+            f"警告: beatoraja 厳格デコードに合わない行を {dropped} 件スキップしました",
+            f"（{enriched_name} には残します）。",
             file=sys.stderr,
         )
 
@@ -453,7 +454,8 @@ def _resolve_config_pipeline(
     header_urls_cfg, disp_cfg, short_cfg = normalize_source_tables(cfg)
     if not header_urls_cfg:
         print(
-            "source_tables が空、または source_header_urls / source_header_url が空のためスキップします（難易度表フィルタは行いません）。",
+            "source_tables が空、または source_header_urls / source_header_url が",
+            "空のためスキップします（難易度表フィルタは行いません）。",
             file=sys.stderr,
         )
         raise SystemExit(0)
@@ -467,12 +469,14 @@ def _resolve_config_pipeline(
     if isinstance(legacy_maps, list) and legacy_maps and n_src:
         if len(legacy_maps) < n_src:
             print(
-                "警告: custom_level_mapping（トップレベル配列）の要素数が元ヘッダー数より少ないです（足りないインデックスはマップ無し）。",
+                "警告: custom_level_mapping（トップレベル配列）の要素数が元ヘッダー数より少ないです",
+                "（足りないインデックスはマップ無し）。",
                 file=sys.stderr,
             )
         if len(legacy_maps) > n_src:
             print(
-                "警告: custom_level_mapping（トップレベル配列）の要素数が元ヘッダー数より多いです（余った要素は無視されます）。",
+                "警告: custom_level_mapping（トップレベル配列）の要素数が元ヘッダー数より",
+                "多いです（余った要素は無視されます）。",
                 file=sys.stderr,
             )
     entries = extract_source_table_entries(cfg)
@@ -496,12 +500,14 @@ def _resolve_config_pipeline(
         if isinstance(disp_warn, list) and disp_warn and resolved_json_urls:
             if len(disp_warn) < len(resolved_json_urls):
                 print(
-                    "警告: source_table_display_names の要素数が元ヘッダー数より少ないです（足りない分はヘッダー名にフォールバック）。",
+                    "警告: source_table_display_names の要素数が元ヘッダー数より少ないです",
+                    "（足りない分はヘッダー名にフォールバック）。",
                     file=sys.stderr,
                 )
             if len(disp_warn) > len(resolved_json_urls):
                 print(
-                    "警告: source_table_display_names の要素数が元ヘッダー数より多いです（余った要素は無視されます）。",
+                    "警告: source_table_display_names の要素数が元ヘッダー数より",
+                    "多いです（余った要素は無視されます）。",
                     file=sys.stderr,
                 )
 
@@ -544,9 +550,11 @@ def _resolve_config_pipeline(
                 f"songdata.db が見つかりません（GitHub Actions）: {songdata}\n"
                 "このリポジトリでは生成 JSON が Git 管理外のため、フィルタをスキップすると表が空のまま公開されます。\n"
                 "対処: 同一リポジトリの GitHub Release のうち **Latest** として公開されているものに、"
-                "アセット名 **songdata.db** を添付してください（.github/workflows/pages.yml がチェックアウト直後に取得）。\n"
+                "アセット名 **songdata.db** を添付してください",
+                "（.github/workflows/pages.yml がチェックアウト直後に取得）。\n"
                 "手順: docs/github-releases-songdata.md\n"
-                "意図的に DB 無しで続行する場合のみ、ワークフローに FILTER_CI_ALLOW_MISSING_SONGDATA=1 を設定してください。"
+                "意図的に DB 無しで続行する場合のみ、",
+                "ワークフローに FILTER_CI_ALLOW_MISSING_SONGDATA=1 を設定してください。",
             )
         if skip_no_db:
             print(f"songdata.db が無いためスキップします: {songdata}", file=sys.stderr)
@@ -760,7 +768,8 @@ def main() -> None:
 
     filtered_data = merged_rows
     print(
-        f"データ行（全ソース合算・重複除去後）: 入力 {total_in} 行、条件通過 {total_filtered}、ユニーク {len(filtered_data)}"
+        f"データ行（全ソース合算・重複除去後）: 入力 {total_in} 行、",
+        f"条件通過 {total_filtered}、ユニーク {len(filtered_data)}",
     )
 
     _write_outputs(

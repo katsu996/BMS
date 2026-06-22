@@ -117,7 +117,8 @@ def resolve_sql_where(cfg: Mapping[str, Any]) -> str:
 def validate_sql_where(fragment: str) -> None:
     if not fragment or not fragment.strip():
         die(
-            "設定 sql_where（またはプリセット）が空です。例: minbpm IS NOT NULL AND maxbpm IS NOT NULL AND minbpm = maxbpm"
+            "設定 sql_where（またはプリセット）が空です。",
+            "例: minbpm IS NOT NULL AND maxbpm IS NOT NULL AND minbpm = maxbpm",
         )
     frag = fragment.strip()
     if len(frag) > 500:
@@ -140,5 +141,6 @@ def validate_sql_where(fragment: str) -> None:
         if word in SONG_TABLE_COLUMNS:
             continue
         die(
-            f"sql_where に許可されていない識別子があります: {m.group(0)!r}。 song テーブルの列名と SQLite の式キーワード以外は使えません。"
+            f"sql_where に許可されていない識別子があります: {m.group(0)!r}。",
+            "song テーブルの列名と SQLite の式キーワード以外は使えません。",
         )
