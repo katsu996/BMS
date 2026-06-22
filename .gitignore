@@ -1,6 +1,8 @@
 __pycache__/
 *.py[cod]
 .Python
+.venv/
+.venv-*/
 
 # beatoraja の DB（GitHub Releases のアセットで配布。リポジトリ直下に配置）
 /songdata.db

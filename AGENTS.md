@@ -4,13 +4,13 @@
 
 ### Project overview
 
-beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Actions で絞り込み JSON を生成し GitHub Pages で公開するツール。Python **3.14.3**（CI）／ローカルは利用可能な Python 3 で可。`tools/table-filter/` のスクリプトは**標準ライブラリのみ**（サードパーティ依存なし）。CI では `ruff` を `pip install` して静的解析に使用する。
+beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Actions で絞り込み JSON を生成し GitHub Pages で公開するツール。Python **3.14.3**（CI）／ローカルは利用可能な Python 3 で可。`tools/table-filter/` のスクリプトは**標準ライブラリのみ**（サードパーティ依存なし）。パッケージ管理は **`uv`** を使用し、dev 依存として `ruff` を持つ。
 
 ### Running the scripts locally
 
 ```bash
-python3 tools/table-filter/filter_table.py --config tools/table-filter/config/filter_config.json
-python3 tools/table-filter/build_pages_table.py --config tools/table-filter/config/filter_config.json
+uv run python tools/table-filter/filter_table.py --config tools/table-filter/config/filter_config.json
+uv run python tools/table-filter/build_pages_table.py --config tools/table-filter/config/filter_config.json
 ```
 
 - `filter_table.py` はネットワークアクセスが必要（元表の URL から難易度表 JSON を取得）。
@@ -28,17 +28,19 @@ cd docs && python3 -m http.server 8080
 ### Lint / tests
 
 ```bash
-python3 -m pip install ruff
-python3 -m ruff check tools/table-filter/
-python3 tools/table-filter/check_filter_config_example_sync.py
-python3 tools/table-filter/check_browser_rows_pages_ui.py --path docs/table/browser_rows.json
-cd tools/table-filter && python3 -m unittest discover -s tests -v
+uv sync  # 初回のみ（ruff をインストール）
+uv run ruff check tools/table-filter/
+uv run python tools/table-filter/check_filter_config_example_sync.py
+uv run python tools/table-filter/check_browser_rows_pages_ui.py --path docs/table/browser_rows.json
+cd tools/table-filter && uv run python -m unittest discover -s tests -v
 ```
 
 ### Key files
 
 | File | Purpose |
 |------|---------|
+| `pyproject.toml` | `uv` プロジェクト設定（dev 依存: ruff） |
+| `.github/workflows/pages.yml` | CI/CD ワークフロー定義（詳細は [docs/ci-github-pages-workflow.md](docs/ci-github-pages-workflow.md)） |
 | `tools/table-filter/source_tables.py` | `source_tables` / `source_tables_path` の解決、後方互換の分割配列、`custom_level_mapping` の統合 |
 | `tools/table-filter/config/source_tables.json` | 既定の難易度表ソース一覧（`filter_config.json` の `source_tables_path` から参照） |
 | `tools/table-filter/filter_table.py` | メインフィルタ CLI（マージ・書き出し） |
@@ -61,5 +63,5 @@ cd tools/table-filter && python3 -m unittest discover -s tests -v
 ### Notes
 
 - `songdata.db` は **Git 管理外**（`.gitignore` の `/songdata.db`）。ローカルでは beatoraja からリポジトリ直下へコピーするか Release から取得。ユニットテストは DB 不要。CI では **同一リポジトリの Latest GitHub Release** から `gh release download` で取得（失敗・空ファイルはエラー）（[docs/github-releases-songdata.md](docs/github-releases-songdata.md)）。
-- Python スクリプト（`tools/table-filter/*.py` の本処理）は標準ライブラリのみ使用。`pip install` は不要（CI の ruff のみ）。
+- Python スクリプト（`tools/table-filter/*.py` の本処理）は標準ライブラリのみ使用。`uv` の sync は ruff のため。
 - 生成される主要 JSON（`docs/table/filtered_*.json`、`browser_rows.json`、`level_stats.json` など）は **`.gitignore` に含まれる**ため、clone 直後は存在しません。CI では毎回 `filter_table.py` が成功して書き直します。ローカルでテストしたあとリポジトリを汚したくない場合は `git checkout -- docs/table/` などで戻せます。

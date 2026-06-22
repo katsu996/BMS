@@ -47,32 +47,35 @@ jobs:
         run: |
           echo "workflow_dispatch note=${{ github.event.inputs.note }}"
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup uv + Python
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.14.3"
 
+      - name: Install dependencies
+        run: uv sync --frozen
+
       - name: Ruff check
-        run: pipx run ruff check tools/table-filter/
+        run: uv run ruff check tools/table-filter/
 
       - name: config/filter_config.example.json のキー検証
-        run: python3 tools/table-filter/check_filter_config_example_sync.py
+        run: uv run python tools/table-filter/check_filter_config_example_sync.py
 
       - name: Unit tests (table-filter)
         working-directory: tools/table-filter
-        run: python3 -m unittest discover -s tests -v
+        run: uv run python -m unittest discover -s tests -v
 
       - name: Build filtered difficulty table
-        run: python3 tools/table-filter/filter_table.py --config tools/table-filter/config/filter_config.json
+        run: uv run python tools/table-filter/filter_table.py --config tools/table-filter/config/filter_config.json
 
       - name: Build merged table for Pages top page
-        run: python3 tools/table-filter/build_pages_table.py --config tools/table-filter/config/filter_config.json
+        run: uv run python tools/table-filter/build_pages_table.py --config tools/table-filter/config/filter_config.json
 
       - name: Validate browser_rows meta.pages_ui
-        run: python3 tools/table-filter/check_browser_rows_pages_ui.py --path docs/table/browser_rows.json
+        run: uv run python tools/table-filter/check_browser_rows_pages_ui.py --path docs/table/browser_rows.json
 
       - name: Smoke check generated JSON
-        run: python3 tools/table-filter/smoke_check_outputs.py --config tools/table-filter/config/filter_config.json
+        run: uv run python tools/table-filter/smoke_check_outputs.py --config tools/table-filter/config/filter_config.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
