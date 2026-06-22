@@ -1,8 +1,33 @@
 [project]
-name = "bms-table-filter"
+name = "bms"
 version = "0.1.0"
 description = "BMS difficulty table"
-requires-python = ">=3.11"
+requires-python = ">=3.13,<3.14"
+
+[tool.poe.tasks]
+check = {cmd="ruff check", help="リントチェック"}
+lint = {cmd="ruff check --fix", help="リント"}
+format = {cmd="ruff format", help="フォーマット"}
+fix = {sequence=["lint", "format"], help="リント&フォーマット"}
+init = {sequence=["clean-cache", "clean-venv"], help="初期化(キャッシュ&仮想環境を削除)"}
+
+[tool.poe.tasks.clean-cache]
+shell = """
+    find . | grep -E "(__pycache__)" | xargs rm -rf
+"""
+help="キャッシュを削除"
+
+[tool.poe.tasks.clean-venv]
+shell = """
+    rm -rf .venv
+"""
+help="仮想環境を削除"
 
 [dependency-groups]
-dev = ["ruff>=0.9.0"]
+dev = [
+    "poethepoet>=0.46.0",
+    { include-group = "lint" },
+]
+lint = [
+    "ruff>=0.11.7",
+]
