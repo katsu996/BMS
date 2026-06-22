@@ -184,10 +184,12 @@ def main() -> None:
     ]
 
     page_title = str(cfg.get("page_title") or cfg.get("output_header_name") or "").strip()
+    meta_comment = str(cfg.get("comment") or "").strip()
     meta = {
         "row_count": len(rows_out),
         "matched_songdata": sum(1 for x in rows_out if x["db"] is not None),
         "page_title": page_title,
+        "reason": meta_comment,
         "sql_where": resolve_sql_where(cfg),
         "table_rows_source_file": data_source_note,
         "source_table_display_names": display_names,

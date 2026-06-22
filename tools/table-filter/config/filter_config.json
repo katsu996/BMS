@@ -19,5 +19,6 @@
   "custom_level_mapping": [],
   "custom_level_field": "custom_level",
   "custom_level_source_key": "level",
-  "custom_level_unmapped": "omit"
+  "custom_level_unmapped": "omit",
+  "comment": "Mixing tables with soflan removed"
 }
