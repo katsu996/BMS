@@ -297,14 +297,14 @@ def _filter_course_structure(course: Any, md5s: set[str], sha256s: set[str]) -> 
     return course
 
 
-def _empty_rows_policy_fail(cfg: Mapping[str, Any]) -> bool:
+def _empty_rows_policy_fail(cfg: Mapping[str, Any], *, in_ci: bool = False) -> bool:
     raw = str(cfg.get("beatoraja_empty_rows_policy", "fail")).strip().lower()
     if raw in ("fail", "error", "true", "1", "yes", "on"):
         return True
     if raw in ("warn", "warning", "allow", "ignore", "skip", "0", "false", "no", "off"):
         return False
     if raw == "auto":
-        return os.environ.get("GITHUB_ACTIONS") == "true"
+        return in_ci
     print(f"警告: 不明な beatoraja_empty_rows_policy: {raw!r}（fail とみなします）", file=sys.stderr)
     return True
 
@@ -338,6 +338,7 @@ def _write_outputs(
     use_relative_data_url: bool,
     site_base: str,
     header_urls_cfg: list[str],
+    in_ci: bool = False,
 ) -> None:
     out_dir = cfg.get("output_dir", "docs/table")
     data_name = cfg.get("output_data_filename", "filtered_data.json")
@@ -392,12 +393,12 @@ def _write_outputs(
             " 元表とハッシュが交差する行が少なくとも 1 件残るようにしてください。",
             file=sys.stderr,
         )
-        if os.environ.get("GITHUB_ACTIONS") == "true":
+        if in_ci:
             print("::error title=難易度表フィルタ::beatoraja 向けデータ行が 0 件です", file=sys.stderr)
     else:
         sync_header_level_order_from_beatoraja_rows(new_header, beatoraja_rows)
 
-    policy_fail = _empty_rows_policy_fail(cfg)
+    policy_fail = _empty_rows_policy_fail(cfg, in_ci=in_ci)
     if not beatoraja_rows and policy_fail:
         raise SystemExit(1)
 
@@ -434,7 +435,13 @@ def _write_outputs(
     )
 
 
-def _resolve_config_pipeline(cfg_path: str) -> dict[str, Any] | None:
+def _resolve_config_pipeline(
+    cfg_path: str,
+    *,
+    in_ci: bool = False,
+    env_site_base_url: str = "",
+    env_allow_missing_songdata: bool = False,
+) -> dict[str, Any] | None:
     if not os.path.isfile(cfg_path):
         print(f"設定ファイルが無いためスキップします: {cfg_path}", file=sys.stderr)
         raise SystemExit(0)
@@ -516,7 +523,7 @@ def _resolve_config_pipeline(cfg_path: str) -> dict[str, Any] | None:
             "1", "true", "yes", "on",
         )
 
-    site_base = (cfg.get("site_base_url") or os.environ.get("SITE_BASE_URL") or "").strip().rstrip("/")
+    site_base = (cfg.get("site_base_url") or env_site_base_url or "").strip().rstrip("/")
     if not use_relative_data_url and not site_base:
         _die(
             "use_relative_data_url が false のときは site_base_url（設定）または "
@@ -528,11 +535,7 @@ def _resolve_config_pipeline(cfg_path: str) -> dict[str, Any] | None:
         skip_no_db = cfg.get("skip_if_no_songdata", True)
         if not isinstance(skip_no_db, bool):
             skip_no_db = str(skip_no_db).strip().lower() in ("1", "true", "yes", "on")
-        in_github_actions = os.environ.get("GITHUB_ACTIONS") == "true"
-        allow_missing_in_ci = os.environ.get("FILTER_CI_ALLOW_MISSING_SONGDATA", "").strip().lower() in (
-            "1", "true", "yes", "on",
-        )
-        if in_github_actions and not allow_missing_in_ci:
+        if in_ci and not env_allow_missing_songdata:
             _die(
                 f"songdata.db が見つかりません（GitHub Actions）: {songdata}\n"
                 "このリポジトリでは生成 JSON が Git 管理外のため、フィルタをスキップすると表が空のまま公開されます。\n"
@@ -564,11 +567,17 @@ def _resolve_config_pipeline(cfg_path: str) -> dict[str, Any] | None:
 
 
 def main() -> None:
+    in_ci = os.environ.get("GITHUB_ACTIONS") == "true"
+    env_site_base = os.environ.get("SITE_BASE_URL", "")
+    env_allow_missing = os.environ.get("FILTER_CI_ALLOW_MISSING_SONGDATA", "").strip().lower() in (
+        "1", "true", "yes", "on",
+    )
+
     ap = argparse.ArgumentParser(description="songdata.db と難易度表 JSON を突き合わせてフィルタする")
     ap.add_argument("--config", default=os.environ.get("FILTER_CONFIG", DEFAULT_CONFIG), help="設定 JSON のパス")
     args = ap.parse_args()
 
-    ctx = _resolve_config_pipeline(args.config)
+    ctx = _resolve_config_pipeline(args.config, in_ci=in_ci, env_site_base_url=env_site_base, env_allow_missing_songdata=env_allow_missing)
 
     cfg = ctx["cfg"]
     md5s, sha256s = _query_allowed_hashes(ctx["songdata"], ctx["sql_where"])
@@ -756,6 +765,7 @@ def main() -> None:
         use_relative_data_url=ctx["use_relative_data_url"],
         site_base=ctx["site_base"],
         header_urls_cfg=ctx["header_urls_cfg"],
+        in_ci=in_ci,
     )
 
 

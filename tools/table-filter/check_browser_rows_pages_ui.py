@@ -95,6 +95,7 @@ def validate_browser_rows(data: Any) -> list[str]:
 
 
 def main() -> int:
+    in_ci = os.environ.get("GITHUB_ACTIONS") == "true"
     ap = argparse.ArgumentParser(description="browser_rows.json の meta.pages_ui を検証")
     ap.add_argument("--path", default="docs/table/browser_rows.json", help="browser_rows.json のパス")
     args = ap.parse_args()
@@ -111,7 +112,7 @@ def main() -> int:
     if errs:
         for e in errs:
             print(f"check_browser_rows: エラー: {e}", file=sys.stderr)
-        if os.environ.get("GITHUB_ACTIONS") == "true":
+        if in_ci:
             print("::error title=browser_rows::meta.pages_ui の検証に失敗しました", file=sys.stderr)
         return 1
     print(f"check_browser_rows: OK（{path}）")

@@ -17,6 +17,7 @@ from source_tables import load_resolved_filter_config, normalize_source_tables
 
 
 def main() -> int:
+    in_ci = os.environ.get("GITHUB_ACTIONS") == "true"
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="tools/table-filter/config/filter_config.json")
     args = ap.parse_args()
@@ -81,7 +82,7 @@ def main() -> int:
             " beatoraja は TableData.validate() で失敗します。",
             file=sys.stderr,
         )
-        if os.environ.get("GITHUB_ACTIONS") == "true":
+        if in_ci:
             print("::error title=smoke::filtered_data.json が空です", file=sys.stderr)
         return 1
 
