@@ -1,132 +1,52 @@
     /*
-      静的 HTML のため npm の shadcn/ui は未使用。
-      shadcn/ui（zinc 系）のデザイントークンと Button / Card / Input 相当の見た目を CSS で再現。
+      BMW M デザイン言語適用 — near-pure black canvas,
+      white BMW Type Next Latin / Inter UPPERCASE display,
+      rectangular components, M tricolor brand accent.
     */
-    html {
-      color-scheme: light dark;
-      --background: 0 0% 100%;
-      --foreground: 240 10% 3.9%;
-      --card: 0 0% 100%;
-      --card-foreground: 240 10% 3.9%;
-      --popover: 0 0% 100%;
-      --popover-foreground: 240 10% 3.9%;
-      --primary: 240 5.9% 10%;
-      --primary-foreground: 0 0% 98%;
-      --secondary: 240 4.8% 95.9%;
-      --secondary-foreground: 240 5.9% 10%;
-      --muted: 240 4.8% 95.9%;
-      --muted-foreground: 240 3.8% 46.1%;
-      --accent: 240 4.8% 95.9%;
-      --accent-foreground: 240 5.9% 10%;
-      --destructive: 0 84.2% 60.2%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 240 5.9% 90%;
-      --input: 240 5.9% 90%;
-      --ring: 240 5.9% 10%;
-      --radius: 0.5rem;
-      --group-lead: 280 40% 96%;
-      --group-t: 221 83% 96%;
-      --group-d: 142 76% 94%;
-      --group-chart: 262 83% 96%;
-      --group-ir: 35 90% 93%;
-      --group-trail: 214 72% 94%;
-      --row-alt: 240 5% 98%;
-      --link: 221 83% 53%;
-    }
-    @media (prefers-color-scheme: dark) {
-      html:not(.theme-light):not(.theme-dark) {
-        --background: 240 10% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 240 10% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 240 10% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 240 5.9% 10%;
-        --secondary: 240 3.7% 15.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 240 3.7% 15.9%;
-        --muted-foreground: 240 5% 64.9%;
-        --accent: 240 3.7% 15.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 240 3.7% 15.9%;
-        --input: 240 3.7% 15.9%;
-        --ring: 240 4.9% 83.9%;
-        --group-lead: 280 35% 18%;
-        --group-t: 224 76% 16%;
-        --group-d: 143 64% 14%;
-        --group-chart: 262 35% 18%;
-        --group-ir: 32 45% 18%;
-        --group-trail: 214 40% 18%;
-        --row-alt: 240 4% 9%;
-        --link: 217 91% 60%;
-      }
-    }
-    html.theme-dark {
-      --background: 240 10% 3.9%;
-      --foreground: 0 0% 98%;
-      --card: 240 10% 3.9%;
-      --card-foreground: 0 0% 98%;
-      --popover: 240 10% 3.9%;
-      --popover-foreground: 0 0% 98%;
-      --primary: 0 0% 98%;
-      --primary-foreground: 240 5.9% 10%;
-      --secondary: 240 3.7% 15.9%;
-      --secondary-foreground: 0 0% 98%;
-      --muted: 240 3.7% 15.9%;
-      --muted-foreground: 240 5% 64.9%;
-      --accent: 240 3.7% 15.9%;
-      --accent-foreground: 0 0% 98%;
-      --destructive: 0 62.8% 30.6%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 240 3.7% 15.9%;
-      --input: 240 3.7% 15.9%;
-      --ring: 240 4.9% 83.9%;
-      --group-lead: 280 35% 18%;
-      --group-t: 224 76% 16%;
-      --group-d: 143 64% 14%;
-      --group-chart: 262 35% 18%;
-      --group-ir: 32 45% 18%;
-      --group-trail: 214 40% 18%;
-      --row-alt: 240 4% 9%;
-      --link: 217 91% 60%;
-    }
-    html.theme-light {
-      --background: 0 0% 100%;
-      --foreground: 240 10% 3.9%;
-      --card: 0 0% 100%;
-      --card-foreground: 240 10% 3.9%;
-      --popover: 0 0% 100%;
-      --popover-foreground: 240 10% 3.9%;
-      --primary: 240 5.9% 10%;
-      --primary-foreground: 0 0% 98%;
-      --secondary: 240 4.8% 95.9%;
-      --secondary-foreground: 240 5.9% 10%;
-      --muted: 240 4.8% 95.9%;
-      --muted-foreground: 240 3.8% 46.1%;
-      --accent: 240 4.8% 95.9%;
-      --accent-foreground: 240 5.9% 10%;
-      --destructive: 0 84.2% 60.2%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 240 5.9% 90%;
-      --input: 240 5.9% 90%;
-      --ring: 240 5.9% 10%;
-      --group-lead: 280 40% 96%;
-      --group-t: 221 83% 96%;
-      --group-d: 142 76% 94%;
-      --group-chart: 262 83% 96%;
-      --group-ir: 35 90% 93%;
-      --group-trail: 214 72% 94%;
-      --row-alt: 240 5% 98%;
-      --link: 221 83% 53%;
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+    :root {
+      color-scheme: dark;
+      --background: 0 0% 0%;        /* canvas — #000 */
+      --foreground: 0 0% 100%;       /* ink / on-dark — #fff */
+      --card: 0 0% 10%;              /* surface-card — #1a1a1a */
+      --card-foreground: 0 0% 100%;
+      --popover: 0 0% 10%;
+      --popover-foreground: 0 0% 100%;
+      --primary: 0 0% 100%;          /* primary text / CTA */
+      --primary-foreground: 0 0% 0%;
+      --secondary: 0 0% 15%;         /* surface-elevated — #262626 */
+      --secondary-foreground: 0 0% 100%;
+      --muted: 0 0% 23%;             /* hairline — #3c3c3c */
+      --muted-foreground: 0 0% 49%;  /* #7e7e7e */
+      --accent: 0 0% 15%;
+      --accent-foreground: 0 0% 100%;
+      --destructive: 4 80% 49%;      /* m-red — #e22718 */
+      --destructive-foreground: 0 0% 100%;
+      --border: 0 0% 23%;            /* hairline */
+      --input: 0 0% 23%;
+      --ring: 0 0% 100%;
+      --radius: 0;
+      --group-lead: 280 30% 18%;
+      --group-t: 224 60% 16%;
+      --group-d: 143 50% 14%;
+      --group-chart: 262 30% 18%;
+      --group-ir: 32 35% 18%;
+      --group-trail: 214 30% 18%;
+      --row-alt: 0 0% 5%;            /* #0d0d0d — surface-soft */
+      --link: 216 76% 47%;           /* bmw-blue — #1c69d4 */
+      --m-blue-light: 206 100% 35%; /* #0066b1 */
+      --m-blue-dark: 216 76% 47%;   /* #1c69d4 */
+      --m-red: 4 80% 49%;           /* #e22718 */
+
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     * { box-sizing: border-box; }
     body {
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+      font-family: inherit;
+      font-weight: 300;
       margin: 0;
-      padding: 1rem 1rem 2rem;
+      padding: 1.5rem 1.5rem 3rem;
       background-color: hsl(var(--background));
       color: hsl(var(--foreground));
       line-height: 1.5;
@@ -139,38 +59,48 @@
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      border-top: 4px solid;
+      border-image: linear-gradient(90deg,
+        hsl(var(--m-blue-light)) 33%,
+        hsl(var(--m-blue-dark)) 33%,
+        hsl(var(--m-blue-dark)) 66%,
+        hsl(var(--m-red)) 66%
+      ) 1;
+      padding-top: 1.25rem;
     }
     h1 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      letter-spacing: -0.025em;
-      line-height: 1.2;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      line-height: 1.05;
       margin: 0;
+      text-transform: uppercase;
     }
-    /* shadcn Button variant="outline" size="default" 相当 */
+    /* BMW M Button — rectangular outline, uppercase, 1.5px tracking */
     .shadcn-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
       white-space: nowrap;
-      border-radius: calc(var(--radius) - 2px);
+      border-radius: 0;
       font-size: 0.875rem;
-      font-weight: 500;
-      line-height: 1.25rem;
-      height: 2.25rem;
-      padding: 0 0.875rem;
-      border: 1px solid hsl(var(--input));
-      background-color: hsl(var(--background));
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      line-height: 1;
+      height: 2.75rem;
+      padding: 0 1.25rem;
+      border: 1px solid hsl(var(--border));
+      background-color: transparent;
       color: hsl(var(--foreground));
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
       cursor: pointer;
-      transition: color 0.15s, background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+      transition: background-color 0.15s, border-color 0.15s;
     }
     .shadcn-btn:hover {
-      background-color: hsl(var(--accent));
-      color: hsl(var(--accent-foreground));
+      background-color: hsl(var(--card));
+      border-color: hsl(var(--foreground));
     }
     .shadcn-btn:focus-visible {
       outline: 2px solid hsl(var(--ring));
@@ -185,14 +115,13 @@
     .shadcn-btn-icon-wrap svg {
       display: block;
     }
-    .shadcn-btn-text { font-size: 0.8125rem; }
-    /* shadcn Card 相当 */
+    .shadcn-btn-text { font-size: 0.8125rem; letter-spacing: 1.5px; }
+    /* BMW M Card — no shadow, hairline border, 0 radius */
     .shadcn-card {
       background-color: hsl(var(--card));
       color: hsl(var(--card-foreground));
       border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      border-radius: 0;
     }
     .lead { color: hsl(var(--muted-foreground)); margin: 0 0 1rem; font-size: 0.875rem; }
     .meta {
@@ -217,26 +146,27 @@
     }
     .sort-priority-label {
       min-width: auto;
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
       white-space: nowrap;
     }
     .sort-dir-select {
       min-width: 5rem;
     }
     .sortbar label { font-size: 0.8125rem; color: hsl(var(--muted-foreground)); white-space: nowrap; font-weight: 500; }
-    /* shadcn Select 相当 */
+    /* BMW M Select — rectangular */
     .shadcn-select {
-      height: 2.25rem;
+      height: 2.5rem;
       padding: 0 0.625rem;
       border: 1px solid hsl(var(--input));
-      border-radius: calc(var(--radius) - 2px);
+      border-radius: 0;
       font-size: 0.875rem;
       min-width: 10rem;
-      background-color: hsl(var(--background));
+      background-color: transparent;
       color: hsl(var(--foreground));
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     }
     .shadcn-select:focus-visible {
       outline: 2px solid hsl(var(--ring));
@@ -246,7 +176,7 @@
       display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
       margin-bottom: 0;
     }
-    .toolbar label { font-size: 0.8125rem; color: hsl(var(--muted-foreground)); font-weight: 500; }
+    .toolbar label { font-size: 0.75rem; color: hsl(var(--muted-foreground)); font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }
     .filter-collapse {
       margin-bottom: 0.75rem;
       padding: 0;
@@ -254,19 +184,16 @@
     }
     .filter-collapse-toggle {
       width: 100%;
-      border-radius: var(--radius);
+      border-radius: 0;
       border: none;
-      box-shadow: none;
       justify-content: space-between;
       padding: 0.65rem 0.85rem;
-      font-weight: 600;
+      font-weight: 700;
     }
-    .filter-collapse-toggle:hover { box-shadow: none; }
     .filter-collapse-panel {
       padding: 0.65rem 0.85rem 0.75rem;
       border-top: 1px solid hsl(var(--border));
     }
-    /* 並び替え / キーワード・出自 / 列表示 を 1 パネル内で区切る */
     .filter-collapse-panel .sortbar {
       margin-bottom: 0;
       padding-bottom: 0.75rem;
@@ -292,22 +219,26 @@
       opacity: 0.8;
       margin-left: 0.35rem;
     }
-    /* shadcn Input 相当 */
+    /* BMW M Input — rectangular */
     .shadcn-input {
       flex: 1 1 12rem;
       min-width: 8rem;
-      height: 2.25rem;
-      padding: 0 0.625rem;
+      height: 2.75rem;
+      padding: 0 0.75rem;
       border: 1px solid hsl(var(--input));
-      border-radius: calc(var(--radius) - 2px);
+      border-radius: 0;
       font-size: 0.875rem;
-      background-color: hsl(var(--background));
+      font-weight: 300;
+      background-color: transparent;
       color: hsl(var(--foreground));
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     }
     .shadcn-input:focus-visible {
       outline: 2px solid hsl(var(--ring));
       outline-offset: 2px;
+    }
+    .shadcn-input::placeholder {
+      color: hsl(var(--muted-foreground));
+      font-weight: 300;
     }
     .filter-src {
       display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem;
@@ -317,26 +248,29 @@
       padding: 0.55rem 0.75rem;
     }
     .filter-src > .filter-src-lead {
-      font-weight: 600;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
       color: hsl(var(--foreground));
       margin: 0 0 0.35rem;
       width: 100%;
       flex: 1 0 100%;
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
     }
     .filter-src label {
       display: inline-flex; align-items: center; gap: 0.4rem;
       cursor: pointer; user-select: none;
       padding: 0.25rem 0.5rem;
-      border-radius: calc(var(--radius) - 2px);
+      border-radius: 0;
       border: 1px solid hsl(var(--border));
       background: hsl(var(--secondary) / 0.35);
       color: hsl(var(--foreground));
       font-size: 0.8125rem;
+      font-weight: 400;
       transition: background-color 0.15s, border-color 0.15s;
     }
     .filter-src label:hover { background-color: hsl(var(--accent)); }
-    .filter-src input { margin: 0; accent-color: hsl(var(--primary)); }
+    .filter-src input { margin: 0; accent-color: hsl(var(--foreground)); }
     #filter-custom-level-bar {
       max-height: 11rem;
       overflow-y: auto;
@@ -351,32 +285,23 @@
     }
     .colbar > .colbar-lead {
       margin: 0 0 0.5rem;
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
     }
     .colbar-group { margin-bottom: 0.5rem; }
     .colbar-group:last-child { margin-bottom: 0; }
     .colbar-group-title {
-      font-weight: 600;
+      font-weight: 700;
       margin: 0 0 0.35rem;
       font-size: 0.75rem;
       color: hsl(var(--foreground));
-      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
     }
-    .colbar-group-title.t { color: hsl(221 83% 40%); }
-    .colbar-group-title.lead { color: hsl(280 45% 38%); }
-    .colbar-group-title.trail { color: hsl(214 70% 36%); }
-    .colbar-group-title.d { color: hsl(142 76% 30%); }
-    html.theme-dark .colbar-group-title.t { color: hsl(217 91% 70%); }
-    html.theme-dark .colbar-group-title.lead { color: hsl(280 55% 78%); }
-    html.theme-dark .colbar-group-title.trail { color: hsl(214 75% 72%); }
-    html.theme-dark .colbar-group-title.d { color: hsl(142 71% 55%); }
-    @media (prefers-color-scheme: dark) {
-      html:not(.theme-light):not(.theme-dark) .colbar-group-title.t { color: hsl(217 91% 70%); }
-      html:not(.theme-light):not(.theme-dark) .colbar-group-title.lead { color: hsl(280 55% 78%); }
-      html:not(.theme-light):not(.theme-dark) .colbar-group-title.trail { color: hsl(214 75% 72%); }
-      html:not(.theme-light):not(.theme-dark) .colbar-group-title.d { color: hsl(142 71% 55%); }
-    }
+    .colbar-group-title.t { color: hsl(var(--m-blue-light)); }
+    .colbar-group-title.lead { color: hsl(280 55% 78%); }
+    .colbar-group-title.trail { color: hsl(214 75% 72%); }
+    .colbar-group-title.d { color: hsl(var(--m-blue-light)); }
     .colpick-wrap {
       display: flex;
       flex-wrap: wrap;
@@ -389,21 +314,21 @@
       gap: 0.3rem;
       white-space: nowrap;
       cursor: pointer;
-      padding: 0.2rem 0.45rem;
-      border-radius: calc(var(--radius) - 4px);
+      padding: 0.25rem 0.5rem;
+      border-radius: 0;
       border: 1px solid hsl(var(--border));
-      background: hsl(var(--secondary) / 0.25);
+      background: transparent;
       user-select: none;
-      font-size: 0.72rem;
-      transition: background-color 0.15s;
+      font-size: 0.75rem;
+      font-weight: 300;
+      transition: background-color 0.15s, border-color 0.15s;
     }
-    label.colpick:hover { background-color: hsl(var(--accent)); }
-    label.colpick input { margin: 0; accent-color: hsl(var(--primary)); }
+    label.colpick:hover { background-color: hsl(var(--card)); border-color: hsl(var(--foreground)); }
+    label.colpick input { margin: 0; accent-color: hsl(var(--foreground)); }
     .scroll {
       overflow: auto;
       max-height: min(78vh, 900px);
     }
-    /* 列幅は colgroup + table-layout: fixed（ドラッグリサイズ用） */
     #tbl {
       table-layout: fixed;
       width: max-content;
@@ -421,25 +346,25 @@
       vertical-align: top;
     }
     th {
-      background-color: hsl(var(--muted));
+      background-color: hsl(var(--card));
       color: hsl(var(--foreground));
       position: sticky;
       top: 0;
       z-index: 2;
       font-weight: 600;
+      letter-spacing: 0.5px;
       overflow: visible;
     }
-    th.group-lead { background-color: hsl(var(--group-lead)); color: hsl(var(--foreground)); }
-    th.group-t { background-color: hsl(var(--group-t)); color: hsl(var(--foreground)); }
-    th.group-d { background-color: hsl(var(--group-d)); color: hsl(var(--foreground)); }
-    th.group-ir { background-color: hsl(var(--group-ir)); color: hsl(var(--foreground)); }
-    th.group-chart { background-color: hsl(var(--group-chart)); color: hsl(var(--foreground)); }
-    th.group-trail { background-color: hsl(var(--group-trail)); color: hsl(var(--foreground)); }
+    th.group-lead { background-color: hsl(var(--group-lead)); }
+    th.group-t { background-color: hsl(var(--group-t)); }
+    th.group-d { background-color: hsl(var(--group-d)); }
+    th.group-ir { background-color: hsl(var(--group-ir)); }
+    th.group-chart { background-color: hsl(var(--group-chart)); }
+    th.group-trail { background-color: hsl(var(--group-trail)); }
     td.ir-cell { white-space: nowrap; }
     td.chart-cell { white-space: nowrap; }
     th.cell-max,
     td.cell-max {
-      /* 既定列幅は col の 50ch。ここは折り返し優先（狭い列でも最低限読めるよう min） */
       min-width: 50ch;
       max-width: none;
       white-space: normal;
@@ -465,7 +390,7 @@
       touch-action: none;
     }
     th .col-resize-handle:hover {
-      background-color: hsl(var(--primary) / 0.18);
+      background-color: hsl(var(--foreground) / 0.12);
     }
     body.col-resizing {
       user-select: none;
@@ -482,17 +407,17 @@
       padding: 0.875rem 1rem;
       background-color: hsl(var(--destructive) / 0.12);
       border: 1px solid hsl(var(--destructive) / 0.35);
-      border-radius: var(--radius);
+      border-radius: 0;
       font-size: 0.875rem;
     }
     code {
       background-color: hsl(var(--muted));
       color: hsl(var(--foreground));
       padding: 0.1em 0.35em;
-      border-radius: calc(var(--radius) - 4px);
+      border-radius: 0;
       font-size: 0.8125em;
     }
-    footer { margin-top: 1.25rem; font-size: 0.8125rem; color: hsl(var(--muted-foreground)); }
+    footer { margin-top: 1.5rem; font-size: 0.8125rem; color: hsl(var(--muted-foreground)); }
     footer.site-footer {
       display: flex;
       flex-wrap: wrap;
@@ -506,55 +431,71 @@
     .shadcn-link {
       display: inline-flex;
       align-items: center;
-      height: 2.25rem;
-      padding: 0 0.75rem;
-      border-radius: calc(var(--radius) - 2px);
-      font-size: 0.875rem;
-      font-weight: 500;
+      height: 2.5rem;
+      padding: 0 0.85rem;
+      border-radius: 0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
       color: hsl(var(--foreground));
       border: 1px solid hsl(var(--input));
-      background: hsl(var(--background));
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      background: transparent;
       transition: background-color 0.15s;
     }
-    .shadcn-link:hover { background-color: hsl(var(--accent)); text-decoration: none; }
+    .shadcn-link:hover { background-color: hsl(var(--card)); text-decoration: none; }
 
-    /* level-stats.html 用（index には無いコンポーネント） */
+    /* BMW M divider */
+    .m-stripe {
+      height: 4px;
+      background: linear-gradient(90deg,
+        hsl(var(--m-blue-light)) 33%,
+        hsl(var(--m-blue-dark)) 33%,
+        hsl(var(--m-blue-dark)) 66%,
+        hsl(var(--m-red)) 66%
+      );
+      border: none;
+      margin: 1.5rem 0;
+    }
+
+    /* level-stats.html */
     .site-head-main { flex: 1; min-width: 0; }
     .nav { margin: 0 0 0.35rem; font-size: 0.875rem; }
     .nav a {
       display: inline-flex;
       align-items: center;
-      height: 2.25rem;
-      padding: 0 0.75rem;
-      border-radius: calc(var(--radius) - 2px);
-      font-weight: 500;
+      height: 2.5rem;
+      padding: 0 0.85rem;
+      border-radius: 0;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-size: 0.75rem;
       color: hsl(var(--foreground));
       border: 1px solid hsl(var(--border));
-      background: hsl(var(--card));
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      background: transparent;
       text-decoration: none;
       transition: background-color 0.15s;
     }
-    .nav a:hover { background-color: hsl(var(--muted)); }
+    .nav a:hover { background-color: hsl(var(--card)); }
     .level-stats-page .meta {
       background-color: hsl(var(--card));
       border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      border-radius: 0;
     }
     .level-stats {
       background-color: hsl(var(--card));
       border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
-      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      border-radius: 0;
       padding: 0.75rem 1rem 1rem;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
     }
     .level-stats h2 {
-      font-size: 1.05rem;
+      font-size: 1.25rem;
+      font-weight: 700;
       margin: 0 0 0.35rem;
-      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: uppercase;
     }
     .level-stats-grid {
       display: grid;
@@ -563,16 +504,18 @@
     }
     .level-stats-card {
       border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
+      border-radius: 0;
       padding: 0.55rem 0.65rem;
-      background-color: hsl(var(--muted) / 0.35);
+      background-color: hsl(var(--row-alt));
       min-width: 0;
     }
     .level-stats-card h3 {
       font-size: 0.9rem;
       margin: 0 0 0.25rem;
-      font-weight: 600;
+      font-weight: 700;
       line-height: 1.35;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     .level-stats-card .level-stats-sub {
       font-size: 0.76rem;
@@ -582,7 +525,7 @@
     .level-stats-card .scroll-mini {
       overflow: auto;
       max-height: min(70vh, 42rem);
-      border-radius: calc(var(--radius) - 2px);
+      border-radius: 0;
       border: 1px solid hsl(var(--border));
       background-color: hsl(var(--background));
     }
@@ -597,10 +540,11 @@
       padding: 0.25rem 0.4rem;
     }
     .level-stats-card th {
-      background-color: hsl(var(--muted));
+      background-color: hsl(var(--card));
       position: sticky;
       top: 0;
       z-index: 1;
+      font-weight: 600;
     }
 
     .skip-link {
@@ -609,9 +553,9 @@
       top: 0.5rem;
       z-index: 100;
       padding: 0.5rem 0.75rem;
-      background: hsl(var(--primary));
-      color: hsl(var(--primary-foreground));
-      border-radius: var(--radius);
+      background: hsl(var(--foreground));
+      color: hsl(var(--background));
+      border-radius: 0;
       font-size: 0.875rem;
       font-weight: 500;
       text-decoration: none;
@@ -630,8 +574,8 @@
       font-size: 0.875rem;
       color: hsl(var(--muted-foreground));
       border: 1px dashed hsl(var(--border));
-      border-radius: var(--radius);
-      background: hsl(var(--muted) / 0.35);
+      border-radius: 0;
+      background: hsl(var(--muted) / 0.2);
     }
     #reload-data {
       margin: 0 0 0.75rem;
@@ -642,7 +586,8 @@
       align-items: flex-start;
       gap: 0.5rem;
       margin: 0.75rem 0 0;
-      padding: 0.5rem 0;
+      padding: 0.75rem 0 0;
+      border-top: 1px solid hsl(var(--border));
     }
     .pagination-row-primary,
     .pagination-row-secondary {
@@ -652,8 +597,11 @@
       gap: 0.5rem 0.75rem;
     }
     .pagination-inline-label {
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       color: hsl(var(--muted-foreground));
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
       white-space: nowrap;
     }
     .pagination-inline-group {
@@ -665,7 +613,7 @@
     }
     .pagination-page-jump {
       width: 4.5rem;
-      min-height: 2.25rem;
+      min-height: 2.5rem;
       padding: 0.25rem 0.5rem;
     }
     .pagination-page-size {
@@ -679,7 +627,7 @@
     }
     .filter-bulk-btn {
       padding: 0.2rem 0.55rem;
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       min-height: 2rem;
     }
     .merged-table-host {
@@ -710,7 +658,7 @@
     }
     @media (max-width: 640px) {
       body {
-        padding: 0.75rem 0.5rem 1.5rem;
+        padding: 1rem 0.75rem 2rem;
       }
       .scroll {
         margin-inline: -0.25rem;
