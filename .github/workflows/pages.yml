@@ -50,7 +50,7 @@ jobs:
       - name: Setup uv + Python
         uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.14.3"
+          python-version: "3.13.3"
 
       - name: Install dependencies
         run: uv sync --frozen
