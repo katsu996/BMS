@@ -22,7 +22,7 @@
 - **`source_table_display_names`**: 後方互換。`source_header_urls` と同じ長さの配列で表示名を上書き（`source_tables` 未使用時）。
 - **`source_table_short_names`**: 後方互換。同じ長さの配列で略称（`source_tables` 未使用時）。
 - **`source_data_url`**: **単一ヘッダー時のみ**有効。データ JSON の URL でヘッダー内 `data_url` を上書き。**複数ヘッダー時は無視**（警告あり）。
-- **`sql_where`**, **`sql_where_preset`**, **`sql_where_disable_identifier_whitelist`**: `SELECT ... FROM song WHERE (` の断片。プリセット指定時は固定 SQL のみ。既定では識別子ホワイトリストあり（詳細は [docs/filter-config-schema.md](../../docs/filter-config-schema.md)）。
+- **`sql_where`**, **`sql_where_preset`**: `SELECT ... FROM song WHERE (` の断片。プリセット指定時は固定 SQL のみ。識別子ホワイトリストは**常に有効**（旧 **`sql_where_disable_identifier_whitelist`** は非推奨・無視。詳細は [docs/filter-config-schema.md](../../docs/filter-config-schema.md)）。
 - **`use_relative_data_url`**: 既定 `true`。`true` のとき生成ヘッダーの `data_url` は **`filtered_data.json` のようなファイル名のみ**（`SITE_BASE_URL` は不要）。`false` のときだけ **`site_base_url`**（または環境変数 **`SITE_BASE_URL`**）で絶対 URL を組み立てる。
 - **`site_base_url`**: `use_relative_data_url` が `false` のときに必須。`https://<owner>.github.io/<repo>/table` のような **ディレクトリ URL（末尾スラッシュなし）**。相対 `data_url` のときは空でよい。
 - **`custom_level_mapping`**: 後方互換のトップレベル配列。**推奨は各 `source_tables[]` の `custom_level_mapping` オブジェクト**（詳細は [docs/github-actions-songdata-table-filter.md](../../docs/github-actions-songdata-table-filter.md)）。**`custom_level_field`**, **`custom_level_source_key`**, **`custom_level_unmapped`**: 独自レベル列の名前・元列・未マップ時の挙動。
@@ -50,4 +50,4 @@ export SITE_BASE_URL="https://あなた.github.io/リポジトリ名/table"
 
 ## SQL インジェクション対策
 
-スクリプトは断片に `;` やコメント、`ATTACH` など一部キーワードを拒否し、**既定では `song` 列名以外の識別子**も拒否します。それでも **信頼できる設定ファイルだけ**をリポジトリにコミットしてください。高度な式が必要なときだけ **`sql_where_disable_identifier_whitelist`: true** を検討してください。
+スクリプトは断片に `;` やコメント、`ATTACH` など一部キーワードを拒否し、**`song` 列名以外の識別子**も拒否します（ホワイトリストは常に有効で、無効化はできません）。それでも **信頼できる設定ファイルだけ**をリポジトリにコミットしてください。

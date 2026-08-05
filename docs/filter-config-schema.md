@@ -10,7 +10,7 @@
 | `beatoraja_empty_rows_policy` | 任意 | `fail`（既定）で beatoraja 向け 0 件時に `filter_table.py` が終了コード 1。`warn` / `allow` 等で緩和 |
 | `sql_where_preset` | 任意 | 非空なら固定プリセットのみ使用（`const_bpm` / `var_bpm`）。**設定時は `sql_where` は無視** |
 | `sql_where` | 条件付き | `sql_where_preset` 未使用時の `song` WHERE 断片 |
-| `sql_where_disable_identifier_whitelist` | 任意 | `true` で識別子ホワイトリスト検証を無効（自己責任） |
+| `sql_where_disable_identifier_whitelist` | 非推奨 | **無視されます。** 識別子ホワイトリストは常に有効（`sql_where_guard.py` に無効化パスなし） |
 | `source_tables_path` | 任意 | **推奨（肥大時）。** `filter_config.json` と同じディレクトリを基準にした相対パス（または絶対パス）で、**難易度表ソース配列だけ**を書いた JSON を指す。非空のとき **ファイルの内容が `source_tables` より優先**され、インラインの `source_tables` は上書きされる。JSON のトップは **配列** か **`{"source_tables": [...]}`** |
 | `source_tables` | 条件付き | **推奨。** 難易度表ソースの配列（`source_tables_path` 未使用、またはファイル読み込み後に設定される）。各要素はオブジェクトで **`header_url`**（または **`url`**）必須、任意で **`display_name`**・**`short_name`**・**`custom_level_mapping`**（オブジェクト。元レベル文字列 → 独自レベル） |
 | `source_header_urls` | 条件付き | **後方互換。** `source_tables` が空のときのみ有効。ヘッダーまたは HTML の URL 配列 |

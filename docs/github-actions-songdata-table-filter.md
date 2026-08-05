@@ -32,7 +32,7 @@
 | ファイル | 役割 |
 |----------|------|
 | `http_fetch.py` | 外部 JSON/HTML の取得（タイムアウト・リトライ・指数バックオフ・stderr ログ） |
-| `sql_where_guard.py` | `sql_where_preset` / 自由記述 `sql_where` の解決、`;` 等の禁止、**識別子ホワイトリスト**（`sql_where_disable_identifier_whitelist` で無効化可） |
+| `sql_where_guard.py` | `sql_where_preset` / 自由記述 `sql_where` の解決、`;` 等の禁止、**識別子ホワイトリスト**（常に有効。旧 `sql_where_disable_identifier_whitelist` は無視） |
 | `beatoraja_rows.py` | 行の正規化・厳格条件チェック・ヘッダー `course` 空配列の除去・`beatoraja_strip_chart_keys` |
 | `level_stats.py` | `level_stats.json` 用のレベルバケット化・ソート・比較行の生成 |
 

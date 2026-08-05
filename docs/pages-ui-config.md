@@ -50,7 +50,7 @@ GitHub Pages のトップ（`docs/index.html` と `docs/assets/pages-index-*.js`
 
 トップ表の **難易度表 / DB の優先列順**（`table_column_order` / `db_column_order`）、**最左に単独グループで出す表列**（**`leading_table_columns`**。既定は **`["custom_level"]`**。1 段目見出しは `group_labels.leading`）、**表データの末尾にだけ出したい列**（**`trailing_table_columns`**。IR・Chart の**さらに右**。同梱では **空配列**）、**見出しラベル**、**長文折り返し対象**（`table_clamp_keys`）、**既定で隠す列**（`column_hidden_fallback`）、**1 段目グループ見出し**（`group_labels` の `leading` / `table` / `db` / `ir` / `chart` / `trailing`。末尾列があるときだけ `trailing` を表示）、**IR 各列**（`ir_subcolumns`）、**Chart 列**（`chart_column`）をまとめます。`build_pages_table.py` が `meta.pages_ui` に埋め込むため、**`browser_rows.json` を取得すればフロントは追加の fetch なし**で解決できます。
 
-古い `browser_rows.json` だけ手元に残っている場合は、`pages-index-column-runtime.js` 内の **`DEFAULT_INDEX_TABLE`** が同等の既定値にフォールバックします（リポジトリの `index_table` と同期しておくこと）。
+古い `browser_rows.json` だけ手元に残っている場合は、`pages-index-column-runtime.js` 内の **`DEFAULT_INDEX_TABLE`** が同等の既定値にフォールバックします（リポジトリの `index_table` と同期しておくこと）。同期はユニットテスト `test_repo_default_index_table_syncs_with_config`（`tools/table-filter/tests/test_pages_ui_json.py`）が CI で検証するため、`index_table` を変更したらテストが通るまで JS 側も合わせてください。
 
 ## バージョン
 

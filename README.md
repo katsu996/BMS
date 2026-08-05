@@ -46,7 +46,7 @@ beatoraja の `songdata.db` と難易度表 JSON を組み合わせ、GitHub Act
 
 **プリセット SQL:** **`sql_where_preset`** に `const_bpm`（等速）または `var_bpm`（変速）を書くと、**固定の安全な SQL だけ**を使います（このとき **`sql_where` は無視**されます）。
 
-**識別子の制限:** 既定では `sql_where` に現れる識別子は **`song` テーブルの列名**に限定されます。複雑な式が必要なときだけ **`sql_where_disable_identifier_whitelist` を `true`** にしてください（**信頼できる内容のみ**コミットすること）。
+**識別子の制限:** `sql_where` に現れる識別子は **`song` テーブルの列名**に限定されます（ホワイトリストは**常に有効**）。旧キー **`sql_where_disable_identifier_whitelist` は非推奨で無視**されます（**信頼できる内容のみ**コミットすること）。
 
 **セキュリティ:** スクリプトは `;` や `ATTACH` など一部パターンを拒否しますが、上記のとおり**信頼できる内容だけ**をコミットしてください。
 

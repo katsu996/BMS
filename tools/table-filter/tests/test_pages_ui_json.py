@@ -1,4 +1,5 @@
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -79,3 +80,69 @@ class TestLoadPagesUiConfig(unittest.TestCase):
         self.assertIsInstance(tco, list)
         self.assertGreater(len(tco), 0)
         self.assertEqual(tco[0], "custom_level")
+
+
+def _extract_default_index_table(js_path: Path) -> dict:
+    """pages-index-column-runtime.js の `DEFAULT_INDEX_TABLE` リテラルを JSON として抽出する。
+
+    このリテラルは JSON 互換（キー・文字列はダブルクォート）のため、
+    文字列を考慮したブレースマッチングで `{...}` を切り出して `json.loads` する。
+    """
+    text = js_path.read_text(encoding="utf-8")
+    marker = "DEFAULT_INDEX_TABLE ="
+    idx = text.find(marker)
+    if idx < 0:
+        raise AssertionError("pages-index-column-runtime.js に DEFAULT_INDEX_TABLE が見つかりません")
+    start = text.find("{", idx)
+    if start < 0:
+        raise AssertionError("DEFAULT_INDEX_TABLE の { が見つかりません")
+    depth = 0
+    in_string = False
+    escape = False
+    i = start
+    n = len(text)
+    while i < n:
+        c = text[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif c == "\\":
+                escape = True
+            elif c == '"':
+                in_string = False
+        else:
+            if c == '"':
+                in_string = True
+            elif c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+        i += 1
+    if depth != 0:
+        raise AssertionError("DEFAULT_INDEX_TABLE の閉じ括弧が見つかりません")
+    literal = text[start : i + 1]
+    # JS オブジェクトリテラルのキーはアンクォート（table_column_order: [...]）のため、
+    # `{` / `,` に続く識別子キーをダブルクォートして JSON として解釈できるようにする。
+    literal = re.sub(r"([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)(\s*:)", r'\1"\2"\3', literal)
+    loaded = json.loads(literal)
+    if not isinstance(loaded, dict):
+        raise AssertionError("DEFAULT_INDEX_TABLE がオブジェクトではありません")
+    return loaded
+
+
+class TestDefaultIndexTableSync(unittest.TestCase):
+    def test_repo_default_index_table_syncs_with_config(self) -> None:
+        """JS の DEFAULT_INDEX_TABLE は設定 JSON の index_table と同期していること。
+
+        `pages-index-column-runtime.js` は古い browser_rows.json 用のフォールバックとして
+        設定と同じ列定義を持つ必要がある（docs/pages-ui-config.md「同期しておくこと」）。
+        設定を編集したら必ずこちらも合わせる。
+        """
+        repo = Path(__file__).resolve().parents[3]
+        d = load_pages_ui_config(str(repo / "docs" / "table" / "pages_ui_config.json"))
+        config_index_table = d.get("index_table")
+        self.assertIsInstance(config_index_table, dict)
+        js_default = _extract_default_index_table(repo / "docs" / "assets" / "pages-index-column-runtime.js")
+        self.assertEqual(config_index_table, js_default)
