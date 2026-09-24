@@ -1,0 +1,5 @@
+# Keep Graphify's local cache and per-machine/intermediate state out of commits.
+**/cache/
+**/cost.json
+**/.graphify_*
+**/.vocab.txt
